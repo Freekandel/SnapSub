@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: snapsub-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    region: frankfurt
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: ENABLE_WHISPER
+        value: 0
+
+staticSites:
+  - name: snapsub-frontend
+    rootDir: frontend
+    buildCommand: ""
+    staticPublishPath: "."
+    # Let op: na backend-deploy moet je het API-endpoint in index.html invullen.

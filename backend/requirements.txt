@@ -1,0 +1,8 @@
+fastapi==0.115.3
+uvicorn==0.30.6
+python-multipart==0.0.9
+ffmpeg-python==0.2.0
+pydantic==2.9.2
+python-dotenv==1.0.1
+# Optioneel (zet ENABLE_WHISPER=1)
+openai-whisper==20231117

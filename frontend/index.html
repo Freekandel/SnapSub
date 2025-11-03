@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SnapSub — MVP</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+    .card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; max-width: 720px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    label { font-weight: 600; }
+    button { padding: 10px 16px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
+    .files a { display: block; margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <h1>SnapSub — AI Content Clipper (MVP)</h1>
+  <div class="card">
+    <div>
+      <label for="file">Video upload (.mp4/.mov):</label>
+      <input id="file" type="file" accept="video/mp4,video/quicktime" />
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <label>Aantal clips</label>
+        <input id="n_clips" type="number" value="3" min="1" max="10" />
+      </div>
+      <div>
+        <label>Clip lengte (s)</label>
+        <input id="clip_len" type="number" value="20" min="5" max="120" />
+      </div>
+      <div>
+        <label>Scene threshold</label>
+        <input id="scene_thresh" type="number" step="0.05" value="0.3" min="0.05" max="0.9" />
+      </div>
+      <div>
+        <label>Whisper (SRT)</label>
+        <input id="use_whisper" type="checkbox" />
+      </div>
+    </div>
+
+    <div style="margin-top:16px;" class="row">
+      <button id="btnUpload">1) Upload</button>
+      <button id="btnGenerate" disabled>2) Genereer Clips</button>
+    </div>
+
+    <p id="status"></p>
+    <div class="files" id="files"></div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000';
+    let video_id = null;
+
+    const $ = (sel) => document.querySelector(sel);
+    const status = (msg) => { document.getElementById('status').innerText = msg; };
+
+    document.getElementById('btnUpload').onclick = async () => {
+      const file = document.getElementById('file').files[0];
+      if (!file) { alert('Kies een videobestand'); return; }
+      status('Uploaden...');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.video_id) {
+        video_id = data.video_id;
+        status('Upload gelukt. Video ID: ' + video_id);
+        document.getElementById('btnGenerate').disabled = false;
+      } else {
+        status('Upload mislukt');
+      }
+    };
+
+    document.getElementById('btnGenerate').onclick = async () => {
+      if (!video_id) { alert('Eerst uploaden'); return; }
+      status('Genereren... dit kan even duren.');
+      const fd = new FormData();
+      fd.append('video_id', video_id);
+      fd.append('n_clips', document.getElementById('n_clips').value);
+      fd.append('clip_len', document.getElementById('clip_len').value);
+      fd.append('scene_thresh', document.getElementById('scene_thresh').value);
+      fd.append('use_whisper', document.getElementById('use_whisper').checked ? 1 : 0);
+
+      const res = await fetch(`${API}/api/generate`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.files) {
+        status('Klaar!');
+        const fs = document.getElementById('files');
+        fs.innerHTML = '';
+        for (const url of data.files) {
+          const a = document.createElement('a');
+          a.href = API + url;
+          a.innerText = 'Download ' + decodeURIComponent(url.split('name=')[1]);
+          a.download = '';
+          fs.appendChild(a);
+        }
+      } else {
+        status('Er ging iets mis.');
+      }
+    };
+  </script>
+</body>
+</html>
