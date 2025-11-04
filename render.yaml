@@ -21,4 +21,3 @@ staticSites:
     rootDir: frontend
     buildCommand: ""
     staticPublishPath: "."
-    # Let op: na backend-deploy moet je het API-endpoint in index.html invullen.
