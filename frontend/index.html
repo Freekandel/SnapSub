@@ -8,81 +8,149 @@
       * {
         box-sizing: border-box;
       }
-      body {
-        margin: 0;
+
+      :root {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
           sans-serif;
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
         background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
         color: #f9fafb;
-        min-height: 100vh;
         display: flex;
-        align-items: center;
+        align-items: stretch;
         justify-content: center;
-        padding: 24px;
+        padding: 20px;
       }
-      .card {
+
+      .shell {
         width: 100%;
-        max-width: 640px;
-        background: rgba(15, 23, 42, 0.95);
-        border-radius: 18px;
-        padding: 24px 24px 20px;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(148, 163, 184, 0.25);
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
+        gap: 20px;
       }
+
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .card,
+      .side {
+        border-radius: 20px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: radial-gradient(circle at top left, #111827 0, #020617 45%);
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.65);
+      }
+
+      .card {
+        padding: 22px 22px 18px;
+      }
+
+      .side {
+        padding: 18px 18px 14px;
+      }
+
       .logo-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
       }
+
       .logo {
         display: flex;
         align-items: center;
         gap: 10px;
       }
+
       .logo-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #38bdf8, #a855f7);
+        width: 36px;
+        height: 36px;
+        border-radius: 14px;
+        background: conic-gradient(
+          from 140deg,
+          #22c55e,
+          #38bdf8,
+          #a855f7,
+          #f97316,
+          #22c55e
+        );
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
         font-size: 18px;
+        color: #0b1120;
       }
+
       .logo-text-main {
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
       }
+
       .logo-text-sub {
         font-size: 0.8rem;
         color: #9ca3af;
       }
-      .badge {
+
+      .pill-badge {
         font-size: 0.75rem;
         padding: 4px 10px;
         border-radius: 999px;
         background: rgba(22, 163, 74, 0.18);
         color: #bbf7d0;
-        border: 1px solid rgba(34, 197, 94, 0.45);
+        border: 1px solid rgba(34, 197, 94, 0.5);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
+
+      .pill-badge span {
+        font-size: 0.8rem;
+      }
+
       h1 {
-        font-size: 1.25rem;
-        margin: 0;
+        font-size: 1.6rem;
+        margin: 0 0 4px;
       }
+
       p.subtitle {
-        margin: 4px 0 18px;
+        margin: 0 0 20px;
         color: #9ca3af;
-        font-size: 0.9rem;
+        font-size: 0.92rem;
+        max-width: 34rem;
       }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 18px;
+      }
+
+      .pill {
+        font-size: 0.75rem;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(75, 85, 99, 0.75);
+        color: #e5e7eb;
+      }
+
       label {
         display: block;
         font-size: 0.82rem;
         color: #e5e7eb;
         margin-bottom: 4px;
       }
+
       input[type="file"],
       input[type="number"] {
         width: 100%;
@@ -93,146 +161,285 @@
         background: rgba(15, 23, 42, 0.9);
         color: #f9fafb;
       }
-      input[type="number"] {
-        margin-bottom: 4px;
+
+      input[type="file"] {
+        padding-top: 6px;
+        padding-bottom: 6px;
       }
+
+      input[type="number"] {
+        margin-bottom: 3px;
+      }
+
+      small.helper {
+        font-size: 0.74rem;
+        color: #6b7280;
+      }
+
       .row {
         display: flex;
         gap: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
       }
+
       .row > div {
         flex: 1;
       }
+
       .btn-row {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 10px;
-        margin-bottom: 8px;
+        margin-top: 12px;
+        margin-bottom: 10px;
       }
+
       button {
         cursor: pointer;
         border-radius: 999px;
         border: none;
-        padding: 8px 16px;
+        padding: 9px 17px;
         font-size: 0.9rem;
         font-weight: 500;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         transition: transform 0.1s ease, box-shadow 0.1s ease,
-          background 0.15s ease;
+          background 0.15s ease, border-color 0.15s ease;
       }
+
       button.primary {
-        background: linear-gradient(135deg, #38bdf8, #6366f1);
-        color: white;
-        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+        background: linear-gradient(135deg, #22c55e, #22c55e, #4ade80);
+        color: #022c22;
+        box-shadow: 0 14px 30px rgba(16, 185, 129, 0.6);
       }
+
       button.secondary {
-        background: rgba(15, 23, 42, 0.9);
+        background: rgba(15, 23, 42, 0.95);
         color: #e5e7eb;
-        border: 1px solid rgba(148, 163, 184, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.7);
       }
+
       button:active {
         transform: translateY(1px);
         box-shadow: none;
       }
-      small.helper {
-        font-size: 0.75rem;
-        color: #6b7280;
-      }
+
       .status {
         font-size: 0.82rem;
         margin-top: 6px;
         min-height: 18px;
       }
+
       .status.ok {
         color: #4ade80;
       }
+
       .status.err {
         color: #f97373;
       }
-      ul {
-        margin-top: 4px;
-        padding-left: 20px;
+
+      .side-title {
+        font-size: 0.98rem;
+        font-weight: 600;
+        margin: 4px 0 8px;
+      }
+
+      .timeline {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 10px;
+      }
+
+      .timeline li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px dashed rgba(55, 65, 81, 0.7);
+      }
+
+      .timeline li:last-child {
+        border-bottom: none;
+      }
+
+      .step-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 30%, #22c55e, #16a34a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: #ecfdf5;
+        flex-shrink: 0;
+      }
+
+      .step-body {
+        font-size: 0.8rem;
+        color: #e5e7eb;
+      }
+
+      .step-body strong {
         font-size: 0.82rem;
       }
-      .footer {
-        margin-top: 14px;
-        font-size: 0.73rem;
+
+      .side-note {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-top: 6px;
+      }
+
+      #result ul {
+        margin-top: 4px;
+        padding-left: 18px;
+        font-size: 0.8rem;
+      }
+
+      #result a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+
+      #result a:hover {
+        text-decoration: underline;
+      }
+
+      .side-footer {
+        margin-top: 10px;
+        font-size: 0.74rem;
         color: #6b7280;
         display: flex;
         justify-content: space-between;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
       }
-      .pill {
+
+      .tag-mini {
         padding: 2px 8px;
         border-radius: 999px;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(75, 85, 99, 0.7);
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(75, 85, 99, 0.75);
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <div class="logo-row">
-        <div class="logo">
-          <div class="logo-icon">S</div>
-          <div>
-            <div class="logo-text-main">SnapSub</div>
-            <div class="logo-text-sub">AI Shorts Maker for creators</div>
+    <div class="shell">
+      <!-- LEFT: main app card -->
+      <div class="card">
+        <div class="logo-row">
+          <div class="logo">
+            <div class="logo-icon">S</div>
+            <div>
+              <div class="logo-text-main">SnapSub</div>
+              <div class="logo-text-sub">AI Shorts Maker for creators</div>
+            </div>
+          </div>
+          <div class="pill-badge">
+            <span>⚡ MVP</span>
+            <span>Beta</span>
           </div>
         </div>
-        <div class="badge">MVP · Beta</div>
-      </div>
 
-      <h1>Turn your long videos into viral short clips</h1>
-      <p class="subtitle">
-        Upload a video, choose how many clips you want, and SnapSub will
-        automatically create short, social-ready highlights.
-      </p>
+        <h1>Turn long-form videos into short-form content</h1>
+        <p class="subtitle">
+          Upload a video, set how many clips you want, and let SnapSub create
+          scroll-stopping Shorts, Reels, and TikToks for you.
+        </p>
 
-      <div style="margin-bottom: 12px">
-        <label for="file">Video upload</label>
-        <input id="file" type="file" accept="video/*" />
-        <small class="helper">Tip: start with a small MP4 to test.</small>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="clips">Number of clips</label>
-          <input id="clips" type="number" min="1" max="10" value="3" />
-          <small class="helper">How many clips to generate?</small>
+        <div class="pill-row">
+          <span class="pill">🎯 Auto clips</span>
+          <span class="pill">🎧 Keeps your audio</span>
+          <span class="pill">📱 9:16 · 1:1 · 16:9</span>
         </div>
-        <div>
-          <label for="length">Clip length (seconds)</label>
-          <input id="length" type="number" min="5" max="90" value="20" />
-          <small class="helper">Perfect for TikTok, Reels, and Shorts.</small>
+
+        <div style="margin-bottom: 14px">
+          <label for="file">Video upload</label>
+          <input id="file" type="file" accept="video/*" />
+          <small class="helper">
+            Tip: start with a short MP4 (under 30s) to see the flow.
+          </small>
         </div>
+
+        <div class="row">
+          <div>
+            <label for="clips">Number of clips</label>
+            <input id="clips" type="number" min="1" max="10" value="3" />
+            <small class="helper">How many highlights should we cut out?</small>
+          </div>
+          <div>
+            <label for="length">Clip length (seconds)</label>
+            <input id="length" type="number" min="5" max="90" value="20" />
+            <small class="helper">Sweet spot for Shorts, Reels, TikTok.</small>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="uploadBtn" class="primary">
+            <span>1️⃣ Upload</span>
+          </button>
+          <button id="generateBtn" class="secondary">
+            <span>2️⃣ Generate clips</span>
+          </button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="result"></div>
       </div>
 
-      <div class="btn-row">
-        <button id="uploadBtn" class="primary">
-          <span>1️⃣ Upload</span>
-        </button>
-        <button id="generateBtn" class="secondary">
-          <span>2️⃣ Generate clips</span>
-        </button>
-      </div>
+      <!-- RIGHT: info / steps / credibility -->
+      <div class="side">
+        <div class="side-title">How SnapSub works</div>
+        <ul class="timeline">
+          <li>
+            <div class="step-dot">1</div>
+            <div class="step-body">
+              <strong>Upload your long-form video</strong><br />
+              MP4, MOV and most common formats are supported. Start small to
+              test the pipeline.
+            </div>
+          </li>
+          <li>
+            <div class="step-dot">2</div>
+            <div class="step-body">
+              <strong>We detect highlight moments</strong><br />
+              SnapSub uses scene changes and timing windows to pick interesting
+              segments automatically.
+            </div>
+          </li>
+          <li>
+            <div class="step-dot">3</div>
+            <div class="step-body">
+              <strong>Export in multiple aspect ratios</strong><br />
+              Each highlight is exported as vertical <em>9:16</em>, square
+              <em>1:1</em>, and horizontal <em>16:9</em> clips.
+            </div>
+          </li>
+          <li>
+            <div class="step-dot">4</div>
+            <div class="step-body">
+              <strong>Download & post</strong><br />
+              Grab your clips as MP4 files and drop them straight into Shorts,
+              Reels, or TikTok.
+            </div>
+          </li>
+        </ul>
 
-      <div id="status" class="status"></div>
+        <div class="side-note">
+          This is an early MVP. Rendering might take a bit depending on video
+          size. Don’t upload sensitive content yet.
+        </div>
 
-      <div id="result"></div>
-
-      <div class="footer">
-        <span class="pill">SnapSub · MVP project</span>
-        <span>Built by Freekandel 💻</span>
+        <div class="side-footer">
+          <span class="tag-mini">Built by Freekandel</span>
+          <span>Side project · not production grade</span>
+        </div>
       </div>
     </div>
 
     <script>
+      // Your backend API URL
       const API = "https://snapsub-api.onrender.com";
 
       const fileInput = document.getElementById("file");
@@ -273,7 +480,10 @@
           }
           const data = await res.json();
           currentVideoId = data.video_id;
-          setStatus("✅ Uploaded successfully! Video ID: " + currentVideoId, "ok");
+          setStatus(
+            "✅ Uploaded successfully! Video ID: " + currentVideoId,
+            "ok"
+          );
         } catch (err) {
           console.error(err);
           setStatus("❌ Upload failed. Try again.", "err");
@@ -326,7 +536,10 @@
           }
         } catch (err) {
           console.error(err);
-          setStatus("❌ Something went wrong during generation.", "err");
+          setStatus(
+            "❌ Something went wrong while generating the clips.",
+            "err"
+          );
         }
       };
     </script>
