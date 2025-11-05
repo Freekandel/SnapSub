@@ -322,6 +322,42 @@
         background: rgba(15, 23, 42, 0.85);
         border: 1px solid rgba(75, 85, 99, 0.75);
       }
+
+      /* Drag & drop zone */
+      .dropzone {
+        margin-top: 8px;
+        padding: 14px 12px;
+        border-radius: 12px;
+        border: 1.5px dashed rgba(75, 85, 99, 0.9);
+        background: rgba(15, 23, 42, 0.8);
+        font-size: 0.83rem;
+        color: #9ca3af;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        text-align: center;
+        transition: border-color 0.15s ease, background 0.15s ease,
+          transform 0.1s ease;
+      }
+
+      .dropzone span.strong {
+        color: #e5e7eb;
+        font-weight: 500;
+      }
+
+      .dropzone.dragover {
+        border-color: #38bdf8;
+        background: rgba(15, 23, 42, 0.95);
+        transform: translateY(-1px);
+      }
+
+      .file-name {
+        margin-top: 4px;
+        font-size: 0.76rem;
+        color: #a5b4fc;
+      }
     </style>
   </head>
   <body>
@@ -355,10 +391,15 @@
         </div>
 
         <div style="margin-bottom: 14px">
-          <label for="file">Video upload</label>
-          <input id="file" type="file" accept="video/*" />
+          <label for="file">Video</label>
+          <input id="file" type="file" accept="video/*" style="display: none" />
+          <div id="dropzone" class="dropzone">
+            <span class="strong">Drop a video here</span>
+            <span>or click to browse from your computer</span>
+          </div>
+          <div id="fileName" class="file-name"></div>
           <small class="helper">
-            Tip: start with a short MP4 (under 30s) to see the flow.
+            Tip: start with a short MP4 (under 30s) to test the flow.
           </small>
         </div>
 
@@ -443,6 +484,8 @@
       const API = "https://snapsub-api.onrender.com";
 
       const fileInput = document.getElementById("file");
+      const dropzone = document.getElementById("dropzone");
+      const fileNameEl = document.getElementById("fileName");
       const clipsInput = document.getElementById("clips");
       const lengthInput = document.getElementById("length");
       const uploadBtn = document.getElementById("uploadBtn");
@@ -451,16 +494,66 @@
       const resultEl = document.getElementById("result");
 
       let currentVideoId = null;
+      let selectedFile = null;
 
       function setStatus(msg, type = "") {
         statusEl.textContent = msg;
         statusEl.className = "status " + type;
       }
 
-      uploadBtn.onclick = async () => {
+      function setFile(file) {
+        selectedFile = file;
+        if (file) {
+          fileNameEl.textContent = `Selected: ${file.name} (${Math.round(
+            file.size / 1024 / 1024
+          )} MB)`;
+        } else {
+          fileNameEl.textContent = "";
+        }
+      }
+
+      // Click on dropzone = open file picker
+      dropzone.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      // If user picks a file via the dialog
+      fileInput.addEventListener("change", () => {
         const file = fileInput.files[0];
+        if (file) {
+          setFile(file);
+        }
+      });
+
+      // Drag & drop events
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+
+      dropzone.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        // Alleen video’s accepteren
+        if (!file.type.startsWith("video/")) {
+          setStatus("Please drop a video file (mp4, mov, ...).", "err");
+          return;
+        }
+        setFile(file);
+      });
+
+      uploadBtn.onclick = async () => {
+        const file = selectedFile || fileInput.files[0];
         if (!file) {
-          setStatus("Please select a video file to upload.", "err");
+          setStatus("Please select or drop a video file first.", "err");
           return;
         }
 
