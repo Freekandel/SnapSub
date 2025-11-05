@@ -151,18 +151,26 @@ def export_clip(
             y="(main_h-overlay_h-40)",
         )
 
+    # Belangrijkste fix: gebruik libx264 als encoder
     out = ffmpeg.output(
         video,
         audio,
         str(out_path),
-        vcodec="h264",
+        vcodec="libx264",
         acodec="aac",
         pix_fmt="yuv420p",
         movflags="+faststart",
     ).overwrite_output()
 
-    out.run(quiet=True)
+    try:
+        out.run(quiet=True)
+    except ffmpeg.Error as e:
+        # Log de fout naar stdout zodat hij in Render-logs verschijnt
+        print("FFmpeg error:", e)
+        raise
+
     return out_path
+
 
 
 def generate_clips(
