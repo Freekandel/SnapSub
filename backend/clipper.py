@@ -1,11 +1,9 @@
 import math
 import subprocess
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 import ffmpeg
-
-from .utils import sec_to_tc
 
 
 def probe_duration(input_path: Path) -> float:
@@ -28,80 +26,12 @@ def probe_duration(input_path: Path) -> float:
     return float(result.stdout.strip())
 
 
-def detect_scenes(input_path: Path, threshold: float = 0.3) -> List[float]:
-    """Detecteer scènewisselingen (timestamps in seconden) met ffmpeg scene filter."""
-    cmd = [
-        "ffmpeg",
-        "-hide_banner",
-        "-nostats",
-        "-i",
-        str(input_path),
-        "-vf",
-        f"select='gt(scene,{threshold})',showinfo",
-        "-f",
-        "null",
-        "-",
-    ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    lines = proc.stderr.splitlines()
-    pts_times = []
-    for ln in lines:
-        if "showinfo" in ln and "pts_time:" in ln:
-            try:
-                part = ln.split("pts_time:")[-1]
-                t = float(part.split(" ")[0])
-                pts_times.append(t)
-            except Exception:
-                pass
-    return sorted(set(round(t, 3) for t in pts_times))
-
-
-def window_around(t: float, half: float, total: float) -> Tuple[float, float]:
-    start = max(0.0, t - half)
-    end = min(total, t + half)
-    # fix: zorg minimaal 3 seconden
-    if end - start < 3:
-        end = min(total, start + 3)
-    return (start, end)
-
-
-def unique_non_overlapping(
-    spans: List[Tuple[float, float]], min_gap: float = 2.0
-) -> List[Tuple[float, float]]:
-    spans = sorted(spans)
-    out: List[Tuple[float, float]] = []
-    for s, e in spans:
-        if not out:
-            out.append((s, e))
-        else:
-            ps, pe = out[-1]
-            if s - pe >= min_gap:
-                out.append((s, e))
-            else:
-                # merge conservatief
-                out[-1] = (ps, max(pe, e))
-    return out
-
-
-def crop_aspect_filter(target: str) -> str:
-    """FFmpeg crop+scale chain voor target aspect: '9:16' | '1:1' | '16:9'"""
-    if target == "9:16":
-        # center-crop portrait, daarna scale naar 1080x1920
-        return "crop='in_h*9/16:in_h:(in_w-out_w)/2:0',scale=1080:1920"
-    if target == "1:1":
-        return "crop='min(in_w,in_h):min(in_w,in_h)',scale=1080:1080"
-    # default 16:9 naar 1920x1080
-    return (
-        "scale=1920:1080:force_original_aspect_ratio=decrease,"
-        "pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
-    )
-
-
-def burn_subtitles_if_any(input_path: Path, srt_path: Optional[Path]) -> str:
-    if srt_path and srt_path.exists():
-        # ffmpeg subtitles filter
-        return f"subtitles='{srt_path.as_posix()}'"
-    return "null"
+def pick_times(total: float, n_clips: int) -> List[float]:
+    """Kies n_clips tijdstippen gelijkmatig over de video."""
+    if n_clips <= 0 or total <= 0:
+        return []
+    step = total / (n_clips + 1)
+    return [step * (i + 1) for i in range(n_clips)]
 
 
 def export_clip(
@@ -109,52 +39,18 @@ def export_clip(
     out_dir: Path,
     start: float,
     end: float,
-    aspect: str = "9:16",
-    srt_path: Optional[Path] = None,
-    branding_png: Optional[Path] = None,
+    index: int,
 ) -> Path:
+    """Exporteer een simpele clip zonder ingewikkelde filters."""
     duration = max(0.1, end - start)
-    vf_chain = [
-        crop_aspect_filter(aspect),
-    ]
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    # subtitles als apart filtergraph (optioneel)
-    sub_filter = burn_subtitles_if_any(input_path, srt_path)
+    out_path = out_dir / f"clip_{index+1}.mp4"
 
-    vf = ",".join([f for f in vf_chain if f])
-
-    out_path = out_dir / f"clip_{sec_to_tc(start).replace(':', '-')}_{aspect.replace(':', 'x')}.mp4"
-
-    input_stream = ffmpeg.input(str(input_path), ss=start, t=duration)
-    video = input_stream.video
-    audio = input_stream.audio
-
-    # Subtitles filter
-    if sub_filter != "null":
-        video = video.filter_("subtitles", str(srt_path))
-
-    # Aspect chain
-    for f in vf.split(","):
-        name, *args = f.split("=")
-        if args:
-            video = video.filter_(name, args[0])
-        else:
-            video = video.filter_(name)
-
-    # Overlay branding (optioneel)
-    if branding_png and branding_png.exists():
-        logo = ffmpeg.input(str(branding_png))
-        video = ffmpeg.overlay(
-            video,
-            logo,
-            x="(main_w-overlay_w-40)",
-            y="(main_h-overlay_h-40)",
-        )
-
-    # Belangrijkste fix: gebruik libx264 als encoder
+    # Heel simpele ffmpeg-call: knip een stukje uit en zet om naar H.264 + AAC
+    stream = ffmpeg.input(str(input_path), ss=start, t=duration)
     out = ffmpeg.output(
-        video,
-        audio,
+        stream,
         str(out_path),
         vcodec="libx264",
         acodec="aac",
@@ -165,12 +61,11 @@ def export_clip(
     try:
         out.run(quiet=True)
     except ffmpeg.Error as e:
-        # Log de fout naar stdout zodat hij in Render-logs verschijnt
+        # Log naar stdout zodat het zichtbaar wordt in Render-logs
         print("FFmpeg error:", e)
         raise
 
     return out_path
-
 
 
 def generate_clips(
@@ -178,40 +73,37 @@ def generate_clips(
     out_dir: Path,
     n_clips: int = 3,
     clip_len: int = 20,
-    scene_thresh: float = 0.3,
-    srt_path: Optional[Path] = None,
-    branding_png: Optional[Path] = None,
+    scene_thresh: float = 0.3,  # niet meer gebruikt, maar laten staan voor compat
+    srt_path: Optional[Path] = None,  # niet gebruikt
+    branding_png: Optional[Path] = None,  # niet gebruikt
 ) -> List[Path]:
+    """
+    Simpele implementatie:
+    - meet totale lengte
+    - kies n_clips tijdstippen gelijkmatig verdeeld
+    - knip per tijdstip een venster van clip_len seconden
+    """
     total = probe_duration(input_path)
-    scene_times = detect_scenes(input_path, threshold=scene_thresh)
-
-    if not scene_times:
-        # fallback: verdeel gelijkmatig
-        step = total / (n_clips + 1)
-        scene_times = [step * (i + 1) for i in range(n_clips)]
-
-    # kies top-N gelijkmatig verdeeld uit scene_times
-    if len(scene_times) > n_clips:
-        stride = max(1, math.floor(len(scene_times) / n_clips))
-        picks = scene_times[::stride][:n_clips]
-    else:
-        picks = scene_times[:n_clips]
+    times = pick_times(total, n_clips)
 
     half = clip_len / 2
-    spans = [window_around(t, half=half, total=total) for t in picks]
-    spans = unique_non_overlapping(spans)
+    spans = []
+    for t in times:
+        start = max(0.0, t - half)
+        end = min(total, t + half)
+        if end - start <= 0:
+            continue
+        spans.append((start, end))
 
     outputs: List[Path] = []
-    for (s, e) in spans:
-        for aspect in ("9:16", "1:1", "16:9"):
-            outp = export_clip(
-                input_path=input_path,
-                out_dir=out_dir,
-                start=s,
-                end=e,
-                aspect=aspect,
-                srt_path=srt_path,
-                branding_png=branding_png,
-            )
-            outputs.append(outp)
+    for idx, (s, e) in enumerate(spans):
+        outp = export_clip(
+            input_path=input_path,
+            out_dir=out_dir,
+            start=s,
+            end=e,
+            index=idx,
+        )
+        outputs.append(outp)
+
     return outputs
