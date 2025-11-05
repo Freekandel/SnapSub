@@ -1,105 +1,334 @@
-<!doctype html>
-<html lang="nl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SnapSub — MVP</title>
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
-    .card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; max-width: 720px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    label { font-weight: 600; }
-    button { padding: 10px 16px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
-    .files a { display: block; margin: 6px 0; }
-  </style>
-</head>
-<body>
-  <h1>SnapSub — AI Content Clipper (MVP)</h1>
-  <div class="card">
-    <div>
-      <label for="file">Video upload (.mp4/.mov):</label>
-      <input id="file" type="file" accept="video/mp4,video/quicktime" />
-    </div>
-
-    <div class="row" style="margin-top:12px;">
-      <div>
-        <label>Aantal clips</label>
-        <input id="n_clips" type="number" value="3" min="1" max="10" />
-      </div>
-      <div>
-        <label>Clip lengte (s)</label>
-        <input id="clip_len" type="number" value="20" min="5" max="120" />
-      </div>
-      <div>
-        <label>Scene threshold</label>
-        <input id="scene_thresh" type="number" step="0.05" value="0.3" min="0.05" max="0.9" />
-      </div>
-      <div>
-        <label>Whisper (SRT)</label>
-        <input id="use_whisper" type="checkbox" />
-      </div>
-    </div>
-
-    <div style="margin-top:16px;" class="row">
-      <button id="btnUpload">1) Upload</button>
-      <button id="btnGenerate" disabled>2) Genereer Clips</button>
-    </div>
-
-    <p id="status"></p>
-    <div class="files" id="files"></div>
-  </div>
-
-  <script>
-    const API = 'https://snapsub-api.onrender.com';
-    let video_id = null;
-
-    const $ = (sel) => document.querySelector(sel);
-    const status = (msg) => { document.getElementById('status').innerText = msg; };
-
-    document.getElementById('btnUpload').onclick = async () => {
-      const file = document.getElementById('file').files[0];
-      if (!file) { alert('Kies een videobestand'); return; }
-      status('Uploaden...');
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.video_id) {
-        video_id = data.video_id;
-        status('Upload gelukt. Video ID: ' + video_id);
-        document.getElementById('btnGenerate').disabled = false;
-      } else {
-        status('Upload mislukt');
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SnapSub – AI Shorts Maker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        box-sizing: border-box;
       }
-    };
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
+        color: #f9fafb;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .card {
+        width: 100%;
+        max-width: 640px;
+        background: rgba(15, 23, 42, 0.95);
+        border-radius: 18px;
+        padding: 24px 24px 20px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #38bdf8, #a855f7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 18px;
+      }
+      .logo-text-main {
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+      .logo-text-sub {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+      .badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(22, 163, 74, 0.18);
+        color: #bbf7d0;
+        border: 1px solid rgba(34, 197, 94, 0.45);
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0;
+      }
+      p.subtitle {
+        margin: 4px 0 18px;
+        color: #9ca3af;
+        font-size: 0.9rem;
+      }
+      label {
+        display: block;
+        font-size: 0.82rem;
+        color: #e5e7eb;
+        margin-bottom: 4px;
+      }
+      input[type="file"],
+      input[type="number"] {
+        width: 100%;
+        font-size: 0.9rem;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        background: rgba(15, 23, 42, 0.9);
+        color: #f9fafb;
+      }
+      input[type="number"] {
+        margin-bottom: 4px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .row > div {
+        flex: 1;
+      }
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        margin-bottom: 8px;
+      }
+      button {
+        cursor: pointer;
+        border-radius: 999px;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: transform 0.1s ease, box-shadow 0.1s ease,
+          background 0.15s ease;
+      }
+      button.primary {
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: white;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+      }
+      button.secondary {
+        background: rgba(15, 23, 42, 0.9);
+        color: #e5e7eb;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+      }
+      button:active {
+        transform: translateY(1px);
+        box-shadow: none;
+      }
+      small.helper {
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+      .status {
+        font-size: 0.82rem;
+        margin-top: 6px;
+        min-height: 18px;
+      }
+      .status.ok {
+        color: #4ade80;
+      }
+      .status.err {
+        color: #f97373;
+      }
+      ul {
+        margin-top: 4px;
+        padding-left: 20px;
+        font-size: 0.82rem;
+      }
+      .footer {
+        margin-top: 14px;
+        font-size: 0.73rem;
+        color: #6b7280;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .pill {
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(75, 85, 99, 0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo-row">
+        <div class="logo">
+          <div class="logo-icon">S</div>
+          <div>
+            <div class="logo-text-main">SnapSub</div>
+            <div class="logo-text-sub">AI Shorts Maker for creators</div>
+          </div>
+        </div>
+        <div class="badge">MVP · Beta</div>
+      </div>
 
-    document.getElementById('btnGenerate').onclick = async () => {
-      if (!video_id) { alert('Eerst uploaden'); return; }
-      status('Genereren... dit kan even duren.');
-      const fd = new FormData();
-      fd.append('video_id', video_id);
-      fd.append('n_clips', document.getElementById('n_clips').value);
-      fd.append('clip_len', document.getElementById('clip_len').value);
-      fd.append('scene_thresh', document.getElementById('scene_thresh').value);
-      fd.append('use_whisper', document.getElementById('use_whisper').checked ? 1 : 0);
+      <h1>Turn your long videos into viral short clips</h1>
+      <p class="subtitle">
+        Upload a video, choose how many clips you want, and SnapSub will
+        automatically create short, social-ready highlights.
+      </p>
 
-      const res = await fetch(`${API}/api/generate`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.files) {
-        status('Klaar!');
-        const fs = document.getElementById('files');
-        fs.innerHTML = '';
-        for (const url of data.files) {
-          const a = document.createElement('a');
-          a.href = API + url;
-          a.innerText = 'Download ' + decodeURIComponent(url.split('name=')[1]);
-          a.download = '';
-          fs.appendChild(a);
+      <div style="margin-bottom: 12px">
+        <label for="file">Video upload</label>
+        <input id="file" type="file" accept="video/*" />
+        <small class="helper">Tip: start with a small MP4 to test.</small>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="clips">Number of clips</label>
+          <input id="clips" type="number" min="1" max="10" value="3" />
+          <small class="helper">How many clips to generate?</small>
+        </div>
+        <div>
+          <label for="length">Clip length (seconds)</label>
+          <input id="length" type="number" min="5" max="90" value="20" />
+          <small class="helper">Perfect for TikTok, Reels, and Shorts.</small>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="uploadBtn" class="primary">
+          <span>1️⃣ Upload</span>
+        </button>
+        <button id="generateBtn" class="secondary">
+          <span>2️⃣ Generate clips</span>
+        </button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div id="result"></div>
+
+      <div class="footer">
+        <span class="pill">SnapSub · MVP project</span>
+        <span>Built by Freekandel 💻</span>
+      </div>
+    </div>
+
+    <script>
+      const API = "https://snapsub-api.onrender.com";
+
+      const fileInput = document.getElementById("file");
+      const clipsInput = document.getElementById("clips");
+      const lengthInput = document.getElementById("length");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const generateBtn = document.getElementById("generateBtn");
+      const statusEl = document.getElementById("status");
+      const resultEl = document.getElementById("result");
+
+      let currentVideoId = null;
+
+      function setStatus(msg, type = "") {
+        statusEl.textContent = msg;
+        statusEl.className = "status " + type;
+      }
+
+      uploadBtn.onclick = async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          setStatus("Please select a video file to upload.", "err");
+          return;
         }
-      } else {
-        status('Er ging iets mis.');
-      }
-    };
-  </script>
-</body>
+
+        setStatus("⏫ Uploading...", "");
+        resultEl.innerHTML = "";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const res = await fetch(`${API}/api/upload`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) {
+            throw new Error("Upload failed");
+          }
+          const data = await res.json();
+          currentVideoId = data.video_id;
+          setStatus("✅ Uploaded successfully! Video ID: " + currentVideoId, "ok");
+        } catch (err) {
+          console.error(err);
+          setStatus("❌ Upload failed. Try again.", "err");
+        }
+      };
+
+      generateBtn.onclick = async () => {
+        if (!currentVideoId) {
+          setStatus("Please upload a video first.", "err");
+          return;
+        }
+
+        setStatus("✂️ Generating clips...", "");
+        resultEl.innerHTML = "";
+
+        const formData = new FormData();
+        formData.append("video_id", currentVideoId);
+        formData.append("n_clips", clipsInput.value || "3");
+        formData.append("clip_len", lengthInput.value || "20");
+        formData.append("scene_thresh", "0.3");
+        formData.append("use_whisper", "0");
+
+        try {
+          const res = await fetch(`${API}/api/generate`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) {
+            throw new Error("Generation failed");
+          }
+          const data = await res.json();
+          if (data.error) {
+            setStatus("❌ " + data.error, "err");
+            return;
+          }
+          setStatus("✅ Clips ready! Download below.", "ok");
+
+          if (Array.isArray(data.files)) {
+            const ul = document.createElement("ul");
+            data.files.forEach((url) => {
+              const li = document.createElement("li");
+              const a = document.createElement("a");
+              a.href = API + url;
+              a.textContent = "Download clip";
+              a.target = "_blank";
+              li.appendChild(a);
+              ul.appendChild(li);
+            });
+            resultEl.appendChild(ul);
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus("❌ Something went wrong during generation.", "err");
+        }
+      };
+    </script>
+  </body>
 </html>
