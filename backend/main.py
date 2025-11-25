@@ -1,16 +1,23 @@
-import os
+from __future__ import annotations
+
+import logging
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from dotenv import load_dotenv
 
-from .utils import DATA_DIR, new_video_id, ensure_dir
-from .clipper import generate_clips
+from .utils import DATA_DIR, ensure_dir, new_video_id
+from .clipper import (
+    ClipStrategy,
+    ExportOptions,
+    generate_clips,
+)
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="SnapSub MVP API")
 
@@ -21,6 +28,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _as_bool(value, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 @app.get("/health")
@@ -39,7 +56,6 @@ async def upload_video(file: UploadFile = File(...)):
 
 
 def format_srt_time(t: float) -> str:
-    # SRT tijdformaat: HH:MM:SS,mmm
     ms = int((t - int(t)) * 1000)
     s = int(t) % 60
     m = (int(t) // 60) % 60
@@ -54,52 +70,103 @@ async def api_generate(
     clip_len: int = Form(20),
     scene_thresh: float = Form(0.3),
     use_whisper: int = Form(0),
+    strategy: str = Form("even"),
+    branding_name: Optional[str] = Form(None),
+    branding_position: str = Form("bottom-right"),
+    branding_scale: float = Form(0.22),
+    target_width: Optional[int] = Form(None),
+    target_height: Optional[int] = Form(None),
+    maintain_aspect: int = Form(1),
+    fps: Optional[int] = Form(None),
+    gif_preview: int = Form(0),
+    fade: int = Form(1),
+    fade_duration: float = Form(0.6),
 ):
     vid_dir = DATA_DIR / video_id
     if not vid_dir.exists():
         return JSONResponse({"error": "video_id not found"}, status_code=404)
 
-    # vind input-bestand
-    in_files = list(vid_dir.glob("input_*"))
-    if not in_files:
+    inputs = list(vid_dir.glob("input_*"))
+    if not inputs:
         return JSONResponse({"error": "no input for video_id"}, status_code=400)
-    input_path = in_files[0]
+    input_path = inputs[0]
 
     srt_path: Optional[Path] = None
-    if use_whisper:
+    if _as_bool(use_whisper):
         try:
             import whisper  # type: ignore
+
             model = whisper.load_model("small")
             result = model.transcribe(str(input_path))
-            # Schrijf SRT
             srt_path = vid_dir / "subtitles.srt"
             with open(srt_path, "w", encoding="utf-8") as srt:
-                idx = 1
-                for seg in result["segments"]:
+                for idx, seg in enumerate(result["segments"], start=1):
                     start = seg["start"]
                     end = seg["end"]
                     text = seg["text"].strip()
                     srt.write(f"{idx}\n")
-                    srt.write(
-                        f"{format_srt_time(start)} --> {format_srt_time(end)}\n"
-                    )
+                    srt.write(f"{format_srt_time(start)} --> {format_srt_time(end)}\n")
                     srt.write(text + "\n\n")
-                    idx += 1
-        except Exception as e:
-            print("Whisper error:", e)
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Whisper transcription failed: %s", exc)
+
+    branding_png: Optional[Path] = None
+    if branding_name:
+        candidate = vid_dir / branding_name
+        if candidate.exists():
+            branding_png = candidate
+        else:
+            logger.warning("Branding asset %s not found; ignoring.", candidate)
+
+    target_resolution = None
+    if target_width and target_height:
+        target_resolution = (target_width, target_height)
+
+    export_opts = ExportOptions(
+        add_fade=_as_bool(fade, True),
+        fade_duration=fade_duration,
+        target_resolution=target_resolution,
+        maintain_aspect=_as_bool(maintain_aspect, True),
+        fps=fps,
+        gif_preview=_as_bool(gif_preview, False),
+    )
+
+    try:
+        clip_strategy = ClipStrategy(strategy.lower())
+    except ValueError:
+        clip_strategy = ClipStrategy.EVEN
 
     out_dir = ensure_dir(vid_dir / "clips")
-    outputs = generate_clips(
+    clip_metadata = generate_clips(
         input_path=input_path,
         out_dir=out_dir,
         n_clips=n_clips,
         clip_len=clip_len,
         scene_thresh=scene_thresh,
         srt_path=srt_path,
+        branding_png=branding_png,
+        strategy=clip_strategy,
+        branding_position=branding_position,
+        branding_scale=branding_scale,
+        export_opts=export_opts,
     )
 
-    files = [f"/api/download?video_id={video_id}&name={p.name}" for p in outputs]
-    return {"video_id": video_id, "files": files}
+    base_url = f"/api/download?video_id={video_id}&name="
+    clips = [
+        {
+            "index": meta.index,
+            "start": meta.start,
+            "end": meta.end,
+            "duration": meta.duration,
+            "video": f"{base_url}{meta.video_path.name}",
+            "gif_preview": f"{base_url}{meta.gif_preview.name}"
+            if meta.gif_preview
+            else None,
+        }
+        for meta in clip_metadata
+    ]
+
+    return {"video_id": video_id, "clips": clips}
 
 
 @app.get("/api/download")
