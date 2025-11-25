@@ -44,6 +44,10 @@ def _as_bool(value, default: bool = False) -> bool:
 def health():
     return {"status": "ok"}
 
+@app.get("/")
+def root():
+    return {"service": "SnapSub API", "status": "ok"}
+
 
 @app.post("/api/upload")
 async def upload_video(file: UploadFile = File(...)):
