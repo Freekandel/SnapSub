@@ -10,16 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from .utils import DATA_DIR, ensure_dir, new_video_id
-from .clipper import (
-    ClipStrategy,
-    ExportOptions,
-    generate_clips,
-)
+from .clipper import ClipStrategy, ExportOptions, generate_clips
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="SnapSub MVP API")
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/")
+def root():
+    return {"service": "SnapSub API", "status": "ok"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,22 +42,6 @@ def _as_bool(value, default: bool = False) -> bool:
     if isinstance(value, int):
         return value != 0
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-
-app = FastAPI()
-
-@app.get("/")
-def root():
-    return {"service": "SnapSub API", "status": "ok"}
 
 
 @app.post("/api/upload")
