@@ -1,8 +1,10 @@
 fastapi==0.115.3
-uvicorn==0.30.6
+uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 ffmpeg-python==0.2.0
-pydantic==2.9.2
+pydantic==2.10.3
 python-dotenv==1.0.1
-# Optioneel (zet ENABLE_WHISPER=1)
-openai-whisper==20231117
+orjson==3.10.7            # faster JSON responses (FastAPI can auto-use it)
+aiofiles==24.1.0          # async file handling if needed
+openai-whisper==20231117  # optional; guard with ENABLE_WHISPER
+yt-dlp==2024.8.6          # for future YouTube URL ingestion
