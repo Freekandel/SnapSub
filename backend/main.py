@@ -44,6 +44,8 @@ def _as_bool(value, default: bool = False) -> bool:
 def health():
     return {"status": "ok"}
 
+app = FastAPI()
+
 @app.get("/")
 def root():
     return {"service": "SnapSub API", "status": "ok"}
