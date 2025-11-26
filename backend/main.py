@@ -40,9 +40,14 @@ def _as_bool(value, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+from fastapi import FastAPI
+
+app = FastAPI()
+
 @app.get("/health")
-def health():
+def health_check():
     return {"status": "ok"}
+
 
 app = FastAPI()
 
