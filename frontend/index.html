@@ -5,207 +5,234 @@
     <title>SnapSub – AI Shorts Maker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      * {
-        box-sizing: border-box;
+      :root {
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color-scheme: dark;
       }
 
-      :root {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        color-scheme: dark;
+      * {
+        box-sizing: border-box;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at top, #1f2937 0, #020617 55%);
-        color: #f9fafb;
+        background: radial-gradient(circle at top, #050815 0%, #010208 55%);
+        color: #f8fafc;
+        padding: 32px clamp(18px, 4vw, 42px) 48px;
         display: flex;
-        align-items: stretch;
         justify-content: center;
-        padding: 20px;
+      }
+
+      .background-effects::before,
+      .background-effects::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background: radial-gradient(
+          circle at 30% 10%,
+          rgba(34, 197, 94, 0.15),
+          transparent 40%
+        );
+        pointer-events: none;
+      }
+
+      .background-effects::after {
+        background: radial-gradient(
+          circle at 80% 20%,
+          rgba(59, 130, 246, 0.18),
+          transparent 45%
+        );
+        filter: blur(18px);
       }
 
       .shell {
-        width: 100%;
-        max-width: 1150px;
+        width: min(1280px, 100%);
         display: grid;
-        grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
-        gap: 20px;
+        gap: 28px;
+        grid-template-columns: 1.2fr 0.8fr;
       }
 
-      @media (max-width: 900px) {
+      @media (max-width: 1040px) {
         .shell {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: 1fr;
         }
       }
 
       .card,
       .side {
-        border-radius: 20px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: radial-gradient(circle at top left, #111827 0, #020617 45%);
-        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.65);
+        border-radius: 26px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: linear-gradient(145deg, rgba(7, 9, 20, 0.92), rgba(2, 6, 23, 0.85));
+        box-shadow: 0 25px 60px rgba(2, 6, 23, 0.65);
       }
 
       .card {
-        padding: 22px 22px 18px;
+        padding: clamp(22px, 3vw, 32px);
       }
 
       .side {
-        padding: 18px 18px 14px;
+        padding: clamp(20px, 3vw, 26px);
       }
 
-      .logo-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 18px;
+      .halo {
+        position: relative;
+        border-radius: 22px;
+        padding: 24px;
+        background: linear-gradient(125deg, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.3));
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        overflow: hidden;
       }
 
-      .logo {
+      .halo::before {
+        content: "";
+        position: absolute;
+        inset: -40% 10%;
+        background: radial-gradient(circle, rgba(34, 197, 94, 0.4), transparent 60%);
+        filter: blur(50px);
+        opacity: 0.6;
+        animation: pulse 6s linear infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: translate(-20%, -10%) scale(1);
+        }
+        50% {
+          transform: translate(15%, 5%) scale(1.2);
+        }
+        100% {
+          transform: translate(-20%, -10%) scale(1);
+        }
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 3vw, 2.9rem);
+        margin: 0 0 8px;
+      }
+
+      p.subtitle {
+        margin: 0 0 18px;
+        color: rgba(226, 232, 240, 0.78);
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      .badge-row {
         display: flex;
-        align-items: center;
+        flex-wrap: wrap;
         gap: 10px;
+        margin-bottom: 20px;
       }
 
-      .logo-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 14px;
-        background: conic-gradient(
-          from 140deg,
-          #22c55e,
-          #38bdf8,
-          #a855f7,
-          #f97316,
-          #22c55e
-        );
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 18px;
-        color: #0b1120;
-      }
-
-      .logo-text-main {
-        font-weight: 700;
-        font-size: 1.2rem;
-      }
-
-      .logo-text-sub {
-        font-size: 0.8rem;
-        color: #9ca3af;
-      }
-
-      .pill-badge {
-        font-size: 0.75rem;
-        padding: 4px 10px;
+      .badge {
+        padding: 5px 12px;
         border-radius: 999px;
-        background: rgba(22, 163, 74, 0.18);
-        color: #bbf7d0;
-        border: 1px solid rgba(34, 197, 94, 0.5);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        background: rgba(15, 23, 42, 0.6);
+        font-size: 0.78rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
       }
 
-      .pill-row {
+      .dropzone {
+        border-radius: 18px;
+        border: 1.5px dashed rgba(96, 165, 250, 0.65);
+        background: rgba(15, 23, 42, 0.65);
+        padding: 28px;
+        text-align: center;
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 18px;
+        flex-direction: column;
+        gap: 8px;
+        cursor: pointer;
+        transition: 0.2s ease;
       }
 
-      .pill {
-        font-size: 0.75rem;
-        padding: 4px 9px;
+      .dropzone:hover,
+      .dropzone.dragover {
+        border-color: rgba(248, 250, 252, 0.9);
+        background: rgba(15, 23, 42, 0.95);
+        transform: translateY(-1px);
+      }
+
+      .meter {
+        height: 6px;
+        background: rgba(51, 65, 85, 0.7);
         border-radius: 999px;
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(75, 85, 99, 0.75);
-        color: #e5e7eb;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .meter span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       }
 
       label {
-        display: block;
-        font-size: 0.82rem;
-        color: #e5e7eb;
+        font-size: 0.85rem;
+        color: rgba(226, 232, 240, 0.9);
         margin-bottom: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
-      input[type="file"],
-      input[type="number"],
-      input[type="text"],
+      input,
       select {
         width: 100%;
-        font-size: 0.9rem;
-        padding: 8px 10px;
-        border-radius: 10px;
-        border: 1px solid rgba(55, 65, 81, 0.9);
+        border-radius: 14px;
+        border: 1px solid rgba(51, 65, 85, 0.9);
         background: rgba(15, 23, 42, 0.9);
-        color: #f9fafb;
-      }
-
-      input[type="file"] {
-        padding-top: 6px;
-        padding-bottom: 6px;
-      }
-
-      small.helper {
-        font-size: 0.74rem;
-        color: #6b7280;
-      }
-
-      .row {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .row > div {
-        flex: 1;
-      }
-
-      .btn-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 12px;
-        margin-bottom: 10px;
+        color: #f8fafc;
+        font-size: 0.95rem;
+        padding: 10px 14px;
       }
 
       button {
         cursor: pointer;
-        border-radius: 999px;
+        border-radius: 16px;
         border: none;
-        padding: 9px 17px;
-        font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 12px 20px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        transition: transform 0.1s ease, box-shadow 0.1s ease,
-          background 0.15s ease, border-color 0.15s ease;
+        gap: 8px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
       }
 
       button.primary {
-        background: linear-gradient(135deg, #22c55e, #22c55e, #4ade80);
-        color: #022c22;
-        box-shadow: 0 14px 30px rgba(16, 185, 129, 0.6);
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #04130b;
+        box-shadow: 0 18px 35px rgba(34, 197, 94, 0.45);
       }
 
       button.secondary {
-        background: rgba(15, 23, 42, 0.95);
-        color: #e5e7eb;
-        border: 1px solid rgba(148, 163, 184, 0.7);
+        background: rgba(15, 23, 42, 0.92);
+        color: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, 0.6);
       }
 
-      button.ghost {
-        background: rgba(15, 23, 42, 0.6);
+      button.flat {
+        background: transparent;
         color: #94a3b8;
-        border: 1px dashed rgba(148, 163, 184, 0.6);
+        border: 1px dashed rgba(100, 116, 139, 0.7);
       }
 
       button:active {
@@ -213,10 +240,50 @@
         box-shadow: none;
       }
 
+      .preset-row {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        margin-bottom: 18px;
+      }
+
+      .preset {
+        border: 1px solid rgba(51, 65, 85, 0.7);
+        border-radius: 18px;
+        padding: 14px 16px;
+        background: rgba(15, 23, 42, 0.7);
+        cursor: pointer;
+        transition: 0.18s ease;
+      }
+
+      .preset.active,
+      .preset:hover {
+        border-color: rgba(34, 197, 94, 0.7);
+        transform: translateY(-2px);
+        background: rgba(9, 13, 31, 0.95);
+      }
+
+      .pill-toggle {
+        display: inline-flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .pill-toggle label {
+        border: 1px solid rgba(71, 85, 105, 0.7);
+        border-radius: 999px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+
+      .pill-toggle input:checked + span {
+        color: #22c55e;
+      }
+
       .status {
-        font-size: 0.82rem;
-        margin-top: 6px;
-        min-height: 18px;
+        min-height: 24px;
+        font-size: 0.9rem;
+        margin-top: 12px;
       }
 
       .status.ok {
@@ -224,179 +291,634 @@
       }
 
       .status.err {
-        color: #f97373;
+        color: #f87171;
       }
 
-      .side-title {
-        font-size: 0.98rem;
-        font-weight: 600;
-        margin: 4px 0 8px;
+      .results {
+        margin-top: 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-card {
+        border: 1px solid rgba(51, 65, 85, 0.75);
+        border-radius: 18px;
+        padding: 14px 16px;
+        background: rgba(15, 23, 42, 0.85);
+        display: grid;
+        gap: 6px;
+      }
+
+      .result-card header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .mini-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .mini-tags span {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid rgba(71, 85, 105, 0.6);
+      }
+
+      .link-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 0.86rem;
+      }
+
+      .link-row a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+
+      .link-row a:hover {
+        text-decoration: underline;
+      }
+
+      .side-section {
+        margin-bottom: 24px;
       }
 
       .timeline {
         list-style: none;
         padding: 0;
-        margin: 0 0 10px;
-      }
-
-.timeline li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px dashed rgba(55, 65, 81, 0.7);
-}
-
-      .timeline li:last-child {
-        border-bottom: none;
-      }
-
-      .step-dot {
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        background: radial-gradient(circle at 30% 30%, #22c55e, #16a34a);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.7rem;
-        color: #ecfdf5;
-        flex-shrink: 0.
-      }
-
-      #result ul {
-        margin-top: 8px;
-        padding-left: 18px;
-        font-size: 0.82rem;
-        line-height: 1.5;
-      }
-
-      #result a {
-        color: #38bdf8;
-        text-decoration: none;
-      }
-
-      #result a:hover {
-        text-decoration: underline;
-      }
-
-      .result-card {
-        margin-top: 8px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(71, 85, 105, 0.6);
-        background: rgba(15, 23, 42, 0.9);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        font-size: 0.82rem;
-      }
-
-      .result-card span {
-        color: #cbd5f5;
-      }
-
-      .tag-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.85);
-        border: 1px solid rgba(75, 85, 99, 0.75);
-        font-size: 0.7rem;
-      }
-
-      .dropzone {
-        margin-top: 8px;
-        padding: 14px 12px;
-        border-radius: 12px;
-        border: 1.5px dashed rgba(75, 85, 99, 0.9);
-        background: rgba(15, 23, 42, 0.8);
-        font-size: 0.83rem;
-        color: #9ca3af;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-        text-align: center;
-        transition: border-color 0.15s ease, background 0.15s ease,
-          transform 0.1s ease;
-      }
-
-      .dropzone span.strong {
-        color: #e5e7eb;
-        font-weight: 500;
-      }
-
-      .dropzone.dragover {
-        border-color: #38bdf8;
-        background: rgba(15, 23, 42, 0.95);
-        transform: translateY(-1px);
-      }
-
-      .file-name {
-        margin-top: 4px;
-        font-size: 0.76rem;
-        color: #a5b4fc;
-      }
-
-      .advanced-panel {
-        margin-top: 12px;
-        padding: 14px 16px;
-        border-radius: 14px;
-        border: 1px solid rgba(75, 85, 99, 0.55);
-        background: rgba(2, 6, 23, 0.85);
-        display: none;
+        margin: 0;
+        display: grid;
         gap: 12px;
-        flex-direction: column;
-        animation: fadeIn 0.2s ease;
       }
 
-      .advanced-panel.active {
+      .timeline li {
         display: flex;
-      }
-
-      .toggle-row {
-        display: flex;
-        flex-wrap: wrap;
         gap: 10px;
+        border-left: 1px dashed rgba(71, 85, 105, 0.6);
+        padding-left: 12px;
       }
 
-      .toggle-row label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.78rem;
-        cursor: pointer;
+      .timeline strong {
+        font-size: 0.9rem;
       }
 
-      input[type="checkbox"] {
-        accent-color: #22c55e;
-        width: auto;
-        height: auto;
+      .utility-card {
+        border: 1px solid rgba(71, 85, 105, 0.5);
+        border-radius: 18px;
+        padding: 14px;
+        background: rgba(9, 13, 31, 0.7);
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-4px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      .progress-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .progress-steps span {
+        height: 5px;
+        border-radius: 999px;
+        background: rgba(71, 85, 105, 0.6);
+      }
+
+      .progress-steps span.active {
+        background: linear-gradient(90deg, #22c55e, #4ade80);
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
       }
     </style>
   </head>
-  <body>
+  <body class="background-effects">
     <div class="shell">
-      <!-- (previous HTML body content, unchanged) -->
+      <div class="card">
+        <div class="halo">
+          <div class="badge-row">
+            <span class="badge">⚡ MVP</span>
+            <span class="badge">Beta</span>
+            <span class="badge">Neon drop 01</span>
+          </div>
+          <h1>Turn any long-form clip into a snackable short</h1>
+          <p class="subtitle">
+            Upload once, pick a strategy, layer subtitles, branding, GIF previews, and publish-ready
+            aspect ratios—all in a single pass. SnapSub handles the cuts, polish, and packaging.
+          </p>
+          <div class="pill-toggle">
+            <label>
+              <input type="checkbox" checked style="display:none" />
+              <span>🎯 Smart strategies</span>
+            </label>
+            <label>
+              <input type="checkbox" checked style="display:none" />
+              <span>📝 Whisper subs</span>
+            </label>
+            <label>
+              <input type="checkbox" checked style="display:none" />
+              <span>🌀 GIF previews</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin: 22px 0 18px">
+          <label>Video file</label>
+          <input id="file" type="file" accept="video/*" hidden />
+          <div id="dropzone" class="dropzone">
+            <strong>Drop a video (MP4, MOV, WEBM) or click to browse</strong>
+            <span class="file-name" id="fileName"></span>
+            <div class="meter"><span id="fileMeter"></span></div>
+            <small style="color: rgba(226,232,240,0.6)">Recommended: Under 120s for fastest
+              tests.</small>
+          </div>
+        </div>
+
+        <div class="preset-row" id="presetRow">
+          <div class="preset active" data-preset="shorts">
+            <strong>YouTube Shorts</strong>
+            <small>Clip 25s · 1080x1920 · fades</small>
+          </div>
+          <div class="preset" data-preset="tiktok">
+            <strong>TikTok React</strong>
+            <small>Clip 35s · 1080x1620 · GIF preview</small>
+          </div>
+          <div class="preset" data-preset="linkedin">
+            <strong>LinkedIn Carousel</strong>
+            <small>Clip 45s · 1080x1350 · watermark</small>
+          </div>
+          <div class="preset" data-preset="custom">
+            <strong>Custom</strong>
+            <small>Tweak everything manually</small>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div>
+            <label for="clips">Number of clips</label>
+            <input id="clips" type="number" min="1" max="12" value="3" />
+          </div>
+          <div>
+            <label for="length">Clip length (seconds)</label>
+            <input id="length" type="number" min="5" max="120" value="25" />
+          </div>
+        </div>
+
+        <div class="grid two" style="margin-top: 12px">
+          <div>
+            <label for="strategy">Strategy</label>
+            <select id="strategy">
+              <option value="even">Even spacing</option>
+              <option value="scene">Scene aware</option>
+              <option value="random">Randomized</option>
+            </select>
+          </div>
+          <div>
+            <label for="sceneThresh">Scene spacing</label>
+            <input
+              id="sceneThresh"
+              type="number"
+              min="0.05"
+              max="0.95"
+              step="0.05"
+              value="0.3"
+            />
+          </div>
+        </div>
+
+        <button id="advancedToggle" class="flat" type="button" style="margin-top: 16px">
+          ⚙️ Advanced controls
+        </button>
+
+        <div id="advancedPanel" class="advanced-panel">
+          <div class="grid two">
+            <div>
+              <label for="brandingName">Brand overlay filename</label>
+              <input
+                id="brandingName"
+                type="text"
+                placeholder="logo.png (stored alongside video)"
+              />
+            </div>
+            <div>
+              <label for="brandingPosition">Overlay position</label>
+              <select id="brandingPosition">
+                <option value="bottom-right">Bottom right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="top-right">Top right</option>
+                <option value="top-left">Top left</option>
+                <option value="center">Center</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid two">
+            <div>
+              <label for="brandingScale">Overlay scale</label>
+              <input
+                id="brandingScale"
+                type="number"
+                step="0.05"
+                min="0.05"
+                max="0.6"
+                value="0.22"
+              />
+            </div>
+            <div>
+              <label for="fps">Target FPS</label>
+              <input id="fps" type="number" min="15" max="60" placeholder="e.g. 30" />
+            </div>
+          </div>
+
+          <div class="grid two">
+            <div>
+              <label>Target resolution</label>
+              <div class="grid two" style="gap: 10px">
+                <input id="targetWidth" type="number" min="320" max="1920" placeholder="Width" />
+                <input id="targetHeight" type="number" min="320" max="1920" placeholder="Height" />
+              </div>
+            </div>
+            <div>
+              <label for="fadeDuration">Fade duration (s)</label>
+              <input
+                id="fadeDuration"
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="2"
+                value="0.6"
+              />
+            </div>
+          </div>
+
+          <div class="toggle-row" style="margin-top: 6px">
+            <label><input type="checkbox" id="useFade" checked />Add fades</label>
+            <label><input type="checkbox" id="maintainAspect" checked />Maintain aspect</label>
+            <label><input type="checkbox" id="gifPreview" />GIF preview</label>
+            <label><input type="checkbox" id="useWhisper" />Generate subtitles (Whisper)</label>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-top: 20px">
+          <button id="uploadBtn" class="primary" type="button">
+            ⬆️ Upload video
+          </button>
+          <button id="generateBtn" class="secondary" type="button">
+            ✂️ Generate clips
+          </button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="progressSteps" class="progress-steps">
+          <span></span><span></span><span></span><span></span>
+        </div>
+
+        <div id="result" class="results"></div>
+      </div>
+
+      <div class="side">
+        <div class="side-section">
+          <h3>Live pipeline</h3>
+          <ul class="timeline" id="timeline">
+            <li>
+              <div>
+                <strong>Upload & storage</strong><br />
+                File stored securely per video ID.
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Highlights discovery</strong><br />
+                Even, scene-aware or random strategies pick timestamps.
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Enrich & polish</strong><br />
+                Whisper subtitles, watermark overlay, fades, aspect fit, GIF preview.
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Delivery</strong><br />
+                Download MP4s + GIFs, ready for Shorts/Reels/TikTok.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="side-section utility-card">
+          <h4>Clip kit</h4>
+          <p style="margin: 0 0 10px; color: rgba(226,232,240,0.8)">
+            Generated clips include:
+          </p>
+          <ul style="margin: 0; padding-left: 18px; color: rgba(226,232,240,0.75); font-size: 0.9rem">
+            <li>MP4 (H.264 + AAC, streaming optimized)</li>
+            <li>Optional GIF preview (~512px width)</li>
+            <li>Subtitles baked in (if Whisper enabled)</li>
+            <li>Watermark overlay with custom placement</li>
+          </ul>
+        </div>
+
+        <div class="side-section utility-card">
+          <h4>Need better renders?</h4>
+          <p style="font-size: 0.86rem; color: rgba(226,232,240,0.7)">
+            For heavier pipelines (4K, multi-size exports, brand packs), drop a note to upgrade your
+            Render plan or connect SnapSub to a worker queue with GPUs.
+          </p>
+        </div>
+      </div>
     </div>
 
     <script>
-      /* entire JavaScript block from earlier message goes here */
+      const API = "https://snapsub-api.onrender.com";
+
+      const fileInput = document.getElementById("file");
+      const dropzone = document.getElementById("dropzone");
+      const fileNameEl = document.getElementById("fileName");
+      const fileMeter = document.getElementById("fileMeter");
+      const presetRow = document.getElementById("presetRow");
+      const clipsInput = document.getElementById("clips");
+      const lengthInput = document.getElementById("length");
+      const strategySelect = document.getElementById("strategy");
+      const sceneThreshInput = document.getElementById("sceneThresh");
+      const brandingNameInput = document.getElementById("brandingName");
+      const brandingPositionSelect = document.getElementById("brandingPosition");
+      const brandingScaleInput = document.getElementById("brandingScale");
+      const targetWidthInput = document.getElementById("targetWidth");
+      const targetHeightInput = document.getElementById("targetHeight");
+      const fpsInput = document.getElementById("fps");
+      const fadeDurationInput = document.getElementById("fadeDuration");
+      const fadeToggle = document.getElementById("useFade");
+      const maintainAspectToggle = document.getElementById("maintainAspect");
+      const gifPreviewToggle = document.getElementById("gifPreview");
+      const whisperToggle = document.getElementById("useWhisper");
+      const advancedToggle = document.getElementById("advancedToggle");
+      const advancedPanel = document.getElementById("advancedPanel");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const generateBtn = document.getElementById("generateBtn");
+      const statusEl = document.getElementById("status");
+      const resultEl = document.getElementById("result");
+      const progressSteps = document.getElementById("progressSteps").children;
+
+      let currentVideoId = null;
+      let selectedFile = null;
+
+      function setStatus(message, type = "") {
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+
+      function setProgress(stepIndex) {
+        Array.from(progressSteps).forEach((step, idx) => {
+          step.classList.toggle("active", idx <= stepIndex);
+        });
+      }
+
+      function setFile(file) {
+        selectedFile = file;
+        if (!file) {
+          fileNameEl.textContent = "";
+          fileMeter.style.width = "0%";
+          return;
+        }
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        fileNameEl.textContent = `${file.name} · ${sizeMB} MB · ${file.type || "video"}`;
+        const percent = Math.min(100, (file.size / (120 * 1024 * 1024)) * 100);
+        fileMeter.style.width = `${percent}%`;
+      }
+
+      dropzone.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files[0]) setFile(fileInput.files[0]);
+      });
+
+      ["dragover", "dragleave", "drop"].forEach((event) => {
+        dropzone.addEventListener(event, (e) => e.preventDefault());
+      });
+      dropzone.addEventListener("dragover", () => dropzone.classList.add("dragover"));
+      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+      dropzone.addEventListener("drop", (e) => {
+        dropzone.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("video/")) {
+          setStatus("Please drop a video file.", "err");
+          return;
+        }
+        setFile(file);
+      });
+
+      advancedToggle.addEventListener("click", () => {
+        advancedPanel.classList.toggle("active");
+        advancedToggle.textContent = advancedPanel.classList.contains("active")
+          ? "⬆️ Hide advanced controls"
+          : "⚙️ Advanced controls";
+      });
+
+      presetRow.addEventListener("click", (e) => {
+        const preset = e.target.closest(".preset");
+        if (!preset) return;
+        presetRow.querySelectorAll(".preset").forEach((p) => p.classList.remove("active"));
+        preset.classList.add("active");
+
+        switch (preset.dataset.preset) {
+          case "shorts":
+            lengthInput.value = 25;
+            clipsInput.value = 3;
+            targetWidthInput.value = 1080;
+            targetHeightInput.value = 1920;
+            gifPreviewToggle.checked = false;
+            fadeToggle.checked = true;
+            break;
+          case "tiktok":
+            lengthInput.value = 35;
+            clipsInput.value = 4;
+            targetWidthInput.value = 1080;
+            targetHeightInput.value = 1620;
+            gifPreviewToggle.checked = true;
+            fadeToggle.checked = true;
+            break;
+          case "linkedin":
+            lengthInput.value = 45;
+            clipsInput.value = 2;
+            targetWidthInput.value = 1080;
+            targetHeightInput.value = 1350;
+            brandingScaleInput.value = 0.28;
+            brandingPositionSelect.value = "top-right";
+            gifPreviewToggle.checked = false;
+            fadeToggle.checked = true;
+            maintainAspectToggle.checked = true;
+            break;
+          case "custom":
+          default:
+            break;
+        }
+      });
+
+      uploadBtn.onclick = async () => {
+        const file = selectedFile || fileInput.files[0];
+        if (!file) {
+          setStatus("Please select or drop a video file first.", "err");
+          return;
+        }
+
+        setProgress(0);
+        setStatus("Uploading...", "");
+        resultEl.innerHTML = "";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const res = await fetch(`${API}/api/upload`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) throw new Error("Upload failed");
+          const data = await res.json();
+          currentVideoId = data.video_id;
+          setStatus(`✅ Uploaded! Video ID: ${currentVideoId}`, "ok");
+          setProgress(1);
+        } catch (err) {
+          console.error(err);
+          setStatus("❌ Upload failed. Try again.", "err");
+        }
+      };
+
+      generateBtn.onclick = async () => {
+        if (!currentVideoId) {
+          setStatus("Please upload a video first.", "err");
+          return;
+        }
+
+        setStatus("Generating clips...", "");
+        setProgress(2);
+        resultEl.innerHTML = "";
+
+        const formData = new FormData();
+        formData.append("video_id", currentVideoId);
+        formData.append("n_clips", clipsInput.value || "3");
+        formData.append("clip_len", lengthInput.value || "25");
+        formData.append("scene_thresh", sceneThreshInput.value || "0.3");
+        formData.append("strategy", strategySelect.value);
+        formData.append("use_whisper", whisperToggle.checked ? "1" : "0");
+        formData.append("branding_position", brandingPositionSelect.value);
+        formData.append("branding_scale", brandingScaleInput.value || "0.22");
+        formData.append("maintain_aspect", maintainAspectToggle.checked ? "1" : "0");
+        formData.append("gif_preview", gifPreviewToggle.checked ? "1" : "0");
+        formData.append("fade", fadeToggle.checked ? "1" : "0");
+        formData.append("fade_duration", fadeDurationInput.value || "0.6");
+
+        if (brandingNameInput.value.trim()) {
+          formData.append("branding_name", brandingNameInput.value.trim());
+        }
+        if (targetWidthInput.value) formData.append("target_width", targetWidthInput.value);
+        if (targetHeightInput.value) formData.append("target_height", targetHeightInput.value);
+        if (fpsInput.value) formData.append("fps", fpsInput.value);
+
+        try {
+          const res = await fetch(`${API}/api/generate`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) throw new Error("Generation failed");
+          const data = await res.json();
+          if (data.error) {
+            setStatus(`❌ ${data.error}`, "err");
+            return;
+          }
+
+          setProgress(3);
+          setStatus("✅ Clips ready! Scroll down to download.", "ok");
+
+          if (Array.isArray(data.clips) && data.clips.length) {
+            renderResults(data.clips);
+          } else if (Array.isArray(data.files) && data.files.length) {
+            renderLegacyResults(data.files);
+          } else {
+            resultEl.innerHTML = "<small>No clips returned.</small>";
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus("❌ Something went wrong while generating the clips.", "err");
+        }
+      };
+
+      function toNumber(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function renderResults(clips) {
+        resultEl.innerHTML = "";
+        clips.forEach((clip, idx) => {
+          const duration = toNumber(clip.duration);
+          const start = toNumber(clip.start);
+          const end = toNumber(clip.end);
+          const indexLabel = clip.index ?? idx + 1;
+
+          const card = document.createElement("div");
+          card.className = "result-card";
+
+          const header = document.createElement("header");
+          header.innerHTML = `<strong>Clip ${indexLabel}</strong>${
+            duration !== null ? ` · ${duration.toFixed(1)}s` : ""
+          }`;
+          card.appendChild(header);
+
+          const meta = document.createElement("div");
+          meta.innerHTML =
+            (start !== null ? `<span>Start:</span> ${start.toFixed(2)}s` : "") +
+            (end !== null ? ` &nbsp;·&nbsp; <span>End:</span> ${end.toFixed(2)}s` : "");
+          card.appendChild(meta);
+
+          const tags = document.createElement("div");
+          tags.className = "mini-tags";
+          tags.innerHTML = `<span>H.264 MP4</span>${clip.gif_preview ? "<span>GIF</span>" : ""}${
+            whisperToggle.checked ? "<span>Subtitles</span>" : ""
+          }`;
+          card.appendChild(tags);
+
+          const links = document.createElement("div");
+          links.className = "link-row";
+          if (clip.video) {
+            const mp4 = document.createElement("a");
+            mp4.href = API + clip.video;
+            mp4.target = "_blank";
+            mp4.textContent = "Download MP4";
+            links.appendChild(mp4);
+          }
+          if (clip.gif_preview) {
+            const gif = document.createElement("a");
+            gif.href = API + clip.gif_preview;
+            gif.target = "_blank";
+            gif.textContent = "GIF preview";
+            links.appendChild(gif);
+          }
+          card.appendChild(links);
+
+          resultEl.appendChild(card);
+        });
+      }
+
+      function renderLegacyResults(files) {
+        resultEl.innerHTML = "";
+        files.forEach((url, idx) => {
+          const card = document.createElement("div");
+          card.className = "result-card";
+          card.innerHTML = `<strong>Clip ${idx + 1}</strong>`;
+          const a = document.createElement("a");
+          a.href = API + url;
+          a.target = "_blank";
+          a.textContent = "Download clip";
+          card.appendChild(a);
+          resultEl.appendChild(card);
+        });
+      }
     </script>
   </body>
 </html>
