@@ -123,11 +123,8 @@ def _pick_times(
         centers = [min(max(t, safe_min), safe_max) for t in scene_candidates]
         if len(centers) >= n_clips:
             return centers[:n_clips]
-        # fall back to even spacing for the remainder
         remaining = n_clips - len(centers)
-        return centers + _pick_times(
-            total, remaining, clip_len, ClipStrategy.EVEN, []
-        )
+        return centers + _pick_times(total, remaining, clip_len, ClipStrategy.EVEN, [])
 
     if strategy == ClipStrategy.RANDOM:
         return [
@@ -135,7 +132,6 @@ def _pick_times(
             for _ in range(n_clips)
         ]
 
-    # default: evenly spaced
     step = total / (n_clips + 1)
     return [min(max(step * (i + 1), safe_min), safe_max) for i in range(n_clips)]
 
@@ -184,7 +180,7 @@ def _apply_video_filters(
         video_stream = video_stream.filter(
             "fade",
             "t=in",
-            f"st=0",
+            "st=0",
             f"d={export_opts.fade_duration}",
         ).filter(
             "fade",
@@ -244,10 +240,11 @@ def _export_gif_preview(
     ).overwrite_output()
 
     try:
-        gif.run(quiet=True)
+        gif.run(capture_stdout=True, capture_stderr=True)
         return gif_path
     except ffmpeg.Error as exc:
-        logger.warning("Failed to build GIF preview: %s", exc)
+        stderr = exc.stderr.decode("utf-8", "ignore") if exc.stderr else "No stderr"
+        logger.warning("Failed to build GIF preview: %s", stderr)
         return None
 
 
@@ -266,12 +263,7 @@ def generate_clips(
     export_opts: Optional[ExportOptions] = None,
 ) -> List[ClipMetadata]:
     """
-    Fancy multi-clip exporter:
-
-    1. Measure duration.
-    2. Optionally derive candidate centers via lightweight scene/keyframe probing.
-    3. Build time windows per strategy.
-    4. Export with fades, subtitles, watermark, GIF previews, etc.
+    Fancy multi-clip exporter.
     """
     export_opts = export_opts or ExportOptions()
     total = probe_duration(input_path)
@@ -317,9 +309,10 @@ def generate_clips(
         )
 
         try:
-            out.run(quiet=True)
+            out.run(capture_stdout=True, capture_stderr=True)
         except ffmpeg.Error as exc:
-            logger.error("FFmpeg error on clip %s: %s", idx, exc)
+            stderr = exc.stderr.decode("utf-8", "ignore") if exc.stderr else "No stderr"
+            logger.error("FFmpeg failed on clip %s:\n%s", idx, stderr)
             continue
 
         gif_path = None
