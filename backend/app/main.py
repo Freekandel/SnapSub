@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
@@ -16,6 +15,7 @@ from .clipper import ClipStrategy, ExportOptions, generate_clips
 from .utils import DATA_DIR, ensure_dir, new_video_id
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://snapsub-frontend.onrender.com")
@@ -25,7 +25,6 @@ LOCAL_PREVIEW_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
-
 ALLOWED_ORIGINS = [FRONTEND_ORIGIN, *LOCAL_PREVIEW_ORIGINS]
 
 app = FastAPI(title="SnapSub MVP API")
@@ -39,7 +38,6 @@ app.add_middleware(
 )
 
 api = APIRouter(prefix="/api")
-
 _download_registry: dict[str, dict[str, Any]] = {}
 
 
@@ -74,9 +72,20 @@ def _as_bool(value, default: bool = False) -> bool:
 
 async def _download_source(video_id: str, source_url: str, vid_dir: Path) -> None:
     tmp_path = vid_dir / "input_download.mp4"
-    cmd = ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url]
+    cookies_path = os.getenv("YTDLP_COOKIES")
 
-    logger.info("[download:%s] starting yt-dlp for %s", video_id, source_url)
+    logger.info(
+        "[download:%s] starting yt-dlp; cookies=%s; url=%s",
+        video_id,
+        cookies_path or "none",
+        source_url,
+    )
+
+    cmd = ["yt-dlp", "-f", "mp4"]
+    if cookies_path:
+        cmd += ["--cookies", cookies_path]
+    cmd += ["-o", str(tmp_path), source_url]
+
     process = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -86,8 +95,8 @@ async def _download_source(video_id: str, source_url: str, vid_dir: Path) -> Non
 
     if process.returncode != 0:
         err_msg = stderr.decode().strip() or stdout.decode().strip() or "yt-dlp failed"
-        set_download_state(video_id, state="error", error=err_msg)
         logger.error("[download:%s] failed: %s", video_id, err_msg)
+        set_download_state(video_id, state="error", error=err_msg)
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
         return
@@ -117,7 +126,8 @@ async def upload_video(
     if not source_url:
         return JSONResponse({"error": "source_url required"}, status_code=400)
 
-    asyncio.create_task(_download_source(vid, source_url, vid_dir))
+    source = source_url  # narrow Optional[str] -> str for type checkers
+    asyncio.create_task(_download_source(vid, source, vid_dir))
     set_download_state(vid, state="downloading")
     return {"video_id": vid, "state": "downloading"}
 
