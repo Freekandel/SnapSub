@@ -75,7 +75,7 @@ async def upload_video(
         with open(in_path, "wb") as f:
             f.write(await file.read())
     else:
-        import subprocess, tempfile
+        import subprocess
         tmp_path = vid_dir / "download.mp4"
         subprocess.run(
             ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url],
