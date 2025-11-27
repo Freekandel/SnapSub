@@ -200,6 +200,12 @@
     <p>Upload a long-form video or paste a YouTube link, choose the clip strategy, and let SnapSub deliver ready-to-post shorts.</p>
   </header>
 
+  <script>
+    window.API_BASE = window.location.hostname.includes('localhost')
+      ? 'http://127.0.0.1:8000'
+      : 'https://snapsub-backend.onrender.com';
+  </script>
+
   <main>
     <section class="panel">
       <h2>Source & Controls</h2>
@@ -290,9 +296,7 @@
   </main>
 
   <script>
-    const API_BASE = window.location.hostname.includes('localhost')
-      ? 'http://127.0.0.1:8000'
-      : 'https://snapsub-backend.onrender.com';
+    const API_BASE = window.API_BASE;
 
     const endpoints = {
       health: `${API_BASE}/health`,
