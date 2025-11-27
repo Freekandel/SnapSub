@@ -59,7 +59,7 @@ def _as_bool(value, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-@api.post("/upload")
+@api.post("/api/upload")
 async def upload_video(file: UploadFile = File(...)):
     vid = new_video_id()
     vid_dir = ensure_dir(DATA_DIR / vid)
