@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+change it pls:     <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -634,7 +634,11 @@
     </div>
 
     <script>
-      const API = "https://snapsub-api.onrender.com";
+      const API_BASE =
+        (window.SNAPSUB_API_BASE && window.SNAPSUB_API_BASE.replace(/\/$/, "")) ||
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? "http://localhost:10000"
+          : "https://snapsub-api.onrender.com");
 
       const fileInput = document.getElementById("file");
       const dropzone = document.getElementById("dropzone");
@@ -774,7 +778,7 @@
         formData.append("file", file);
 
         try {
-          const res = await fetch(`${API}/api/upload`, {
+          const res = await fetch(`${API_BASE}/api/upload`, {
             method: "POST",
             body: formData,
           });
