@@ -5,25 +5,17 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import APIRouter, FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-from .utils import DATA_DIR, ensure_dir, new_video_id
 from .clipper import ClipStrategy, ExportOptions, generate_clips
+from .utils import DATA_DIR, ensure_dir, new_video_id
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="SnapSub MVP API")
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-@app.get("/")
-def root():
-    return {"service": "SnapSub API", "status": "ok"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +24,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+api = APIRouter(prefix="/api")
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root():
+    return {"service": "SnapSub API", "status": "ok"}
 
 
 def _as_bool(value, default: bool = False) -> bool:
@@ -44,7 +48,7 @@ def _as_bool(value, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-@app.post("/api/upload")
+@api.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
     vid = new_video_id()
     vid_dir = ensure_dir(DATA_DIR / vid)
@@ -62,7 +66,7 @@ def format_srt_time(t: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-@app.post("/api/generate")
+@api.post("/generate")
 async def api_generate(
     video_id: str = Form(...),
     n_clips: int = Form(3),
@@ -168,9 +172,12 @@ async def api_generate(
     return {"video_id": video_id, "clips": clips}
 
 
-@app.get("/api/download")
+@api.get("/download")
 async def download(video_id: str, name: str):
     path = DATA_DIR / video_id / "clips" / name
     if not path.exists():
         return JSONResponse({"error": "file not found"}, status_code=404)
     return FileResponse(path)
+
+
+app.include_router(api)
