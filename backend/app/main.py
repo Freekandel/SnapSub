@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Any, Optional
 
@@ -72,18 +73,23 @@ def _as_bool(value, default: bool = False) -> bool:
 
 async def _download_source(video_id: str, source_url: str, vid_dir: Path) -> None:
     tmp_path = vid_dir / "input_download.mp4"
-    cookies_path = os.getenv("YTDLP_COOKIES")
+    cookies_source = os.getenv("YTDLP_COOKIES")
+    runtime_cookies: Optional[Path] = None
+
+    if cookies_source and os.path.exists(cookies_source):
+        runtime_cookies = vid_dir / "yt_cookies.txt"
+        shutil.copy(cookies_source, runtime_cookies)
 
     logger.info(
         "[download:%s] starting yt-dlp; cookies=%s; url=%s",
         video_id,
-        cookies_path or "none",
+        runtime_cookies or "none",
         source_url,
     )
 
     cmd = ["yt-dlp", "-f", "mp4"]
-    if cookies_path:
-        cmd += ["--cookies", cookies_path]
+    if runtime_cookies:
+        cmd += ["--cookies", str(runtime_cookies), "--no-write-automatic-cookies"]
     cmd += ["-o", str(tmp_path), source_url]
 
     process = await asyncio.create_subprocess_exec(
@@ -92,6 +98,9 @@ async def _download_source(video_id: str, source_url: str, vid_dir: Path) -> Non
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await process.communicate()
+
+    if runtime_cookies and runtime_cookies.exists():
+        runtime_cookies.unlink(missing_ok=True)
 
     if process.returncode != 0:
         err_msg = stderr.decode().strip() or stdout.decode().strip() or "yt-dlp failed"
@@ -126,7 +135,7 @@ async def upload_video(
     if not source_url:
         return JSONResponse({"error": "source_url required"}, status_code=400)
 
-    source = source_url  # narrow Optional[str] -> str for type checkers
+    source = source_url
     asyncio.create_task(_download_source(vid, source, vid_dir))
     set_download_state(vid, state="downloading")
     return {"video_id": vid, "state": "downloading"}

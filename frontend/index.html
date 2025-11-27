@@ -49,6 +49,11 @@
       padding: 22px;
       text-align: center;
       margin-bottom: 18px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-box.dragging {
+      border-color: #a46bff;
+      background: rgba(164, 107, 255, 0.08);
     }
     .upload-box input[type="file"] {
       width: 100%;
@@ -210,7 +215,7 @@
     <section class="panel">
       <h2>Source & Controls</h2>
       <form id="clip-form">
-        <div class="upload-box">
+        <div class="upload-box" id="upload-box">
           <p>Drag & drop or pick a file</p>
           <input id="video-file" type="file" accept="video/*" />
         </div>
@@ -310,6 +315,7 @@
 
     const formEl = document.getElementById('clip-form');
     const uploadInput = document.getElementById('video-file');
+    const dropZone = document.getElementById('upload-box');
     const sourceUrlInput = document.getElementById('source-url');
     const statusBanner = document.getElementById('status-banner');
     const clipsGrid = document.getElementById('clips-grid');
@@ -326,6 +332,25 @@
       advancedCaret.textContent = expanded ? '▼' : '▲';
     });
 
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+    });
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.add('dragging'));
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragging'));
+    });
+    dropZone.addEventListener('drop', (event) => {
+      const files = event.dataTransfer.files;
+      if (files && files.length) {
+        uploadInput.files = files;
+      }
+    });
+
     function setStatus(message, state = 'info') {
       statusBanner.textContent = message;
       statusBanner.dataset.state = state;
@@ -340,10 +365,10 @@
     async function checkHealth() {
       try {
         const res = await fetch(endpoints.health);
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error('health failed');
         setStatus('Backend connected ✅', 'success');
         setTimeout(clearStatus, 2500);
-      } catch {
+      } catch (err) {
         setStatus('Backend unreachable. Confirm backend deployment.', 'error');
       }
     }
@@ -367,18 +392,14 @@
     async function waitForSourceReady(videoId, maxAttempts = 80, delayMs = 3000) {
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const res = await fetch(endpoints.uploadStatus(videoId));
-        if (res.status === 404) {
-          throw new Error('Upload ID not found on server.');
-        }
-        if (!res.ok) {
-          throw new Error(await res.text());
-        }
+        if (res.status === 404) throw new Error('Upload ID not found on server.');
+        if (!res.ok) throw new Error(await res.text());
+
         const data = await res.json();
         const state = (data.state || data.status || '').toLowerCase();
         if (state === 'ready') return data;
-        if (state === 'error') {
-          throw new Error(data.error || 'Source download failed.');
-        }
+        if (state === 'error') throw new Error(data.error || 'Source download failed.');
+
         setStatus(`Downloading source… (attempt ${attempt + 1})`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
@@ -386,10 +407,7 @@
     }
 
     async function requestGeneration(payload) {
-      const res = await fetch(endpoints.generate, {
-        method: 'POST',
-        body: payload
-      });
+      const res = await fetch(endpoints.generate, { method: 'POST', body: payload });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
@@ -400,11 +418,13 @@
         clipsGrid.innerHTML = '<p class="empty">No clips returned.</p>';
         return;
       }
+
       clips.forEach((clip, idx) => {
         const duration = Number(clip.duration ?? 0);
         const videoHref = clip.video?.startsWith('http')
           ? clip.video
           : `${API_BASE}${clip.video}`;
+
         const card = document.createElement('article');
         card.className = 'clip-card';
         card.innerHTML = `
@@ -421,8 +441,8 @@
       });
     }
 
-    formEl.addEventListener('submit', async (evt) => {
-      evt.preventDefault();
+    formEl.addEventListener('submit', async (event) => {
+      event.preventDefault();
       const file = uploadInput.files[0];
       const sourceUrl = sourceUrlInput.value.trim();
 
