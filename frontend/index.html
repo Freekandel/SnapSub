@@ -433,14 +433,14 @@
         setStatus('Uploading source…');
         const uploadResp = await uploadSource(formData);
 
-        const jobId = uploadResp.job_id ?? uploadResp.id;
+        const jobId = uploadResp.job_id ?? uploadResp.id ?? uploadResp.video_id;
         if (!jobId) throw new Error('Upload response missing job ID.');
 
         const payload = {
           job_id: jobId,
           clip_length_sec: Number(document.getElementById('clip-length').value),
           strategy: document.querySelector('input[name="strategy"]:checked').value,
-          source_asset_path: uploadResp.source_asset_path ?? uploadResp.asset_path ?? null,
+          source_asset_path: uploadResp.source_asset_path ?? uploadResp.asset_path ?? uploadResp.input_path ?? null,
           source_media_url: uploadResp.source_media_url ?? uploadResp.url ?? null,
           ...buildAdvancedPayload()
         };
