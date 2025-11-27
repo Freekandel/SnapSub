@@ -60,12 +60,29 @@ def _as_bool(value, default: bool = False) -> bool:
 
 
 @api.post("/upload")
-async def upload_video(file: UploadFile = File(...)):
+async def upload_video(
+    file: UploadFile | None = File(None),
+    source_url: str | None = Form(None)
+):
+    if not file and not source_url:
+        return JSONResponse({"error": "file or source_url required"}, status_code=400)
+
     vid = new_video_id()
     vid_dir = ensure_dir(DATA_DIR / vid)
-    in_path = vid_dir / f"input_{file.filename}"
-    with open(in_path, "wb") as f:
-        f.write(await file.read())
+
+    if file:
+        in_path = vid_dir / f"input_{file.filename}"
+        with open(in_path, "wb") as f:
+            f.write(await file.read())
+    else:
+        import subprocess, tempfile
+        tmp_path = vid_dir / "download.mp4"
+        subprocess.run(
+            ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url],
+            check=True,
+        )
+        in_path = tmp_path
+
     return {"video_id": vid, "input_path": str(in_path)}
 
 

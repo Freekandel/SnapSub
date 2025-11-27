@@ -155,7 +155,7 @@
     .status-banner[data-state="error"] {
       border-color: rgba(255, 118, 118, 0.5);
       color: #ff9ea0;
-      background: rgba(255, 118, 118, 0.12);
+      background: rgba(255, 255, 118, 0.12);
     }
     .clips-grid {
       display: grid;
@@ -302,8 +302,9 @@
     const endpoints = {
       health: `${API_BASE}/health`,
       upload: `${API_PREFIX}/upload`,
-      generate: `${API_PREFIX}/generate-clips`,
-      clips: (jobId) => `${API_PREFIX}/clips?job_id=${encodeURIComponent(jobId)}`
+      generate: `${API_PREFIX}/generate`,
+      download: (videoId, name) =>
+        `${API_PREFIX}/download?video_id=${encodeURIComponent(videoId)}&name=${encodeURIComponent(name)}`
     };
 
     const formEl = document.getElementById('clip-form');
@@ -342,17 +343,15 @@
         setStatus('Backend connected ✅', 'success');
         setTimeout(clearStatus, 2500);
       } catch {
-        setStatus('Backend unreachable. Confirm Render URL.', 'error');
+        setStatus('Backend unreachable. Confirm backend deployment.', 'error');
       }
     }
 
     function buildAdvancedPayload() {
       return {
-        scene_threshold: Number(document.getElementById('scene-threshold').value) || null,
-        max_clips: Number(document.getElementById('num-clips').value) || null,
-        watermark_text: document.getElementById('watermark-text').value || null,
-        brand_color_hex: document.getElementById('brand-color').value || null,
-        subtitles_lang: document.getElementById('captions').value || null
+        scene_thresh: Number(document.getElementById('scene-threshold').value) || 0.35,
+        n_clips: Number(document.getElementById('num-clips').value) || 6,
+        strategy: document.querySelector('input[name="strategy"]:checked').value,
       };
     }
 
@@ -365,31 +364,13 @@
     async function requestGeneration(payload) {
       const res = await fetch(endpoints.generate, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: payload
       });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
 
-    async function pollForClips(jobId, maxAttempts = 40, delayMs = 4000) {
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const res = await fetch(endpoints.clips(jobId));
-        if (res.status === 404 || res.status === 204) {
-          await new Promise((r) => setTimeout(r, delayMs));
-          continue;
-        }
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        if (Array.isArray(data.clips) && data.clips.length) {
-          return data.clips;
-        }
-        await new Promise((r) => setTimeout(r, delayMs));
-      }
-      throw new Error('Timed out waiting for clips.');
-    }
-
-    function renderClips(clips = []) {
+    function renderClips(videoId, clips = []) {
       clipsGrid.innerHTML = '';
       if (!clips.length) {
         clipsGrid.innerHTML = '<p class="empty">No clips returned.</p>';
@@ -397,16 +378,19 @@
       }
       clips.forEach((clip, idx) => {
         const duration = Number(clip.duration ?? 0);
+        const videoHref = clip.video?.startsWith('http')
+          ? clip.video
+          : `${API_BASE}${clip.video}`;
         const card = document.createElement('article');
         card.className = 'clip-card';
         card.innerHTML = `
-          <video controls src="${clip.url}" poster="${clip.thumbnail ?? ''}" preload="metadata"></video>
+          <video controls src="${videoHref}" preload="metadata"></video>
           <div class="meta">
             <div>
-              <h4>${clip.title ?? `Clip #${idx + 1}`}</h4>
+              <h4>Clip #${idx + 1}</h4>
               ${duration ? `<small>${duration.toFixed(1)}s</small>` : ''}
             </div>
-            <a href="${clip.url}" download>Download</a>
+            <a href="${videoHref}" download>Download</a>
           </div>
         `;
         clipsGrid.appendChild(card);
@@ -415,45 +399,41 @@
 
     formEl.addEventListener('submit', async (evt) => {
       evt.preventDefault();
-      const formData = new FormData();
       const file = uploadInput.files[0];
       const sourceUrl = sourceUrlInput.value.trim();
 
-      if (file) formData.append('file', file);
-      if (sourceUrl) formData.append('source_url', sourceUrl);
-
-     if (!file && !sourceUrl) {
+      if (!file && !sourceUrl) {
         setStatus('Provide a file or a source URL before generating.', 'error');
         return;
       }
 
       generateBtn.disabled = true;
+      const uploadForm = new FormData();
+      if (file) uploadForm.append('file', file);
+      if (sourceUrl) uploadForm.append('source_url', sourceUrl);
 
       try {
         setStatus('Uploading source…');
-        const uploadResp = await uploadSource(formData);
+        const uploadResp = await uploadSource(uploadForm);
 
         const jobId = uploadResp.job_id ?? uploadResp.id ?? uploadResp.video_id;
         if (!jobId) throw new Error('Upload response missing job ID.');
 
-        const payload = {
-          job_id: jobId,
-          clip_length_sec: Number(document.getElementById('clip-length').value),
-          strategy: document.querySelector('input[name="strategy"]:checked').value,
-          source_asset_path: uploadResp.source_asset_path ?? uploadResp.asset_path ?? uploadResp.input_path ?? null,
-          source_media_url: uploadResp.source_media_url ?? uploadResp.url ?? null,
-          ...buildAdvancedPayload()
-        };
+        const formPayload = new FormData();
+        formPayload.append('video_id', jobId);
+        formPayload.append('clip_len', document.getElementById('clip-length').value);
+        formPayload.append('strategy', document.querySelector('input[name="strategy"]:checked').value);
+        formPayload.append('n_clips', document.getElementById('num-clips').value);
+        formPayload.append('scene_thresh', document.getElementById('scene-threshold').value);
 
         setStatus('Processing clips…');
-        await requestGeneration(payload);
+        const { clips = [] } = await requestGeneration(formPayload);
 
-        const clips = await pollForClips(jobId);
-        renderClips(clips);
+        renderClips(jobId, clips);
         setStatus('Clips ready! ✅', 'success');
       } catch (err) {
         console.error(err);
-        setStatus(`Error: ${err.message}`, 'error');
+        setStatus(`Error: ${err.message ?? err}`, 'error');
       } finally {
         generateBtn.disabled = false;
       }
