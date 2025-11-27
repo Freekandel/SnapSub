@@ -296,13 +296,13 @@
   </main>
 
   <script>
-    const API_BASE = window.API_BASE;
+    const API_PREFIX = `${API_BASE}/api`;
 
     const endpoints = {
       health: `${API_BASE}/health`,
-      upload: `${API_BASE}/upload`,
-      generate: `${API_BASE}/generate-clips`,
-      clips: (jobId) => `${API_BASE}/clips?job_id=${encodeURIComponent(jobId)}`
+      upload: `${API_PREFIX}/upload`,
+      generate: `${API_PREFIX}/generate-clips`,
+      clips: (jobId) => `${API_PREFIX}/clips?job_id=${encodeURIComponent(jobId)}`
     };
 
     const formEl = document.getElementById('clip-form');
