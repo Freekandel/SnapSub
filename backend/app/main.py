@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
 from pathlib import Path
 from typing import Optional
 
@@ -62,7 +63,7 @@ def _as_bool(value, default: bool = False) -> bool:
 @api.post("/upload")
 async def upload_video(
     file: UploadFile | None = File(None),
-    source_url: str | None = Form(None)
+    source_url: str | None = Form(None),
 ):
     if not file and not source_url:
         return JSONResponse({"error": "file or source_url required"}, status_code=400)
@@ -75,7 +76,9 @@ async def upload_video(
         with open(in_path, "wb") as f:
             f.write(await file.read())
     else:
-        import subprocess
+        if not source_url:
+            raise ValueError("source_url must be provided when no file is uploaded")
+
         tmp_path = vid_dir / "download.mp4"
         subprocess.run(
             ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url],
