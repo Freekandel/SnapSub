@@ -4,58 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SnapSub Studio</title>
-
   <style>
     :root {
       color-scheme: dark;
-      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(circle at top, #18122b 0%, #0f0c1a 45%, #050205 100%);
+      background: radial-gradient(circle at top, #18122b 0%, #090612 55%, #030108 100%);
       color: #f5f5ff;
     }
-
-    .glow {
-      position: fixed;
-      width: 400px;
-      height: 400px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #bf00ff22, transparent 60%);
-      filter: blur(60px);
-      z-index: -1;
-    }
-
-    .glow.glow-1 {
-      top: -80px;
-      left: -40px;
-    }
-
-    .glow.glow-2 {
-      bottom: -120px;
-      right: -60px;
-      background: radial-gradient(circle, #00d4ff22, transparent 60%);
-    }
-
     header {
-      padding: 48px 20px 24px;
+      padding: 48px 24px 16px;
       text-align: center;
     }
-
-    header h1 {
-      font-size: clamp(2.5rem, 5vw, 3.8rem);
-      margin-bottom: 16px;
-    }
-
+    header h1 { margin: 0 0 12px; font-size: clamp(2.4rem, 6vw, 3.8rem); }
     header p {
-      max-width: 620px;
       margin: 0 auto;
-      font-size: 1.1rem;
-      color: #c9c9e0;
+      max-width: 640px;
+      color: #c8c8e3;
+      font-size: 1.05rem;
     }
-
     main {
       max-width: 1100px;
       margin: 0 auto;
@@ -63,241 +34,184 @@
       display: grid;
       gap: 32px;
     }
-
     .panel {
-      background: rgba(22, 18, 38, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(18, 15, 30, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px;
       padding: 24px;
-      box-shadow: 0 30px 60px rgba(3, 0, 10, 0.4);
+      box-shadow: 0 25px 55px rgba(3, 0, 12, 0.45);
       backdrop-filter: blur(18px);
     }
-
-    .panel h2 {
-      margin-top: 0;
-      margin-bottom: 16px;
-      font-size: 1.4rem;
-    }
-
+    .panel h2 { margin-top: 0; font-size: 1.35rem; }
     .upload-box {
-      border: 1px dashed rgba(255, 255, 255, 0.3);
+      border: 1px dashed rgba(255, 255, 255, 0.35);
       border-radius: 20px;
-      padding: 24px;
+      padding: 22px;
       text-align: center;
+      margin-bottom: 18px;
     }
-
     .upload-box input[type="file"] {
       width: 100%;
+      margin-top: 14px;
       padding: 12px;
-      margin: 12px 0;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       background: rgba(255, 255, 255, 0.04);
-      color: #f5f5ff;
+      color: #fff;
     }
-
     .field {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-
-    .field label {
-      font-size: 0.95rem;
-      color: #cfcfe8;
-    }
-
     .field input,
-    .field select,
-    .field textarea {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 12px;
+    .field select {
+      border-radius: 14px;
       padding: 12px 14px;
-      background: rgba(3, 0, 12, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(8, 5, 16, 0.55);
       color: #fff;
       font-size: 1rem;
     }
-
     .strategy-options {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
     }
-
     .strategy-card {
-      position: relative;
-      flex: 1 1 160px;
+      flex: 1 1 170px;
       min-width: 150px;
-      border-radius: 16px;
       padding: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.02);
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .strategy-card input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .strategy-card:hover {
-      transform: translateY(-2px);
-    }
-
-    .strategy-card input:checked + .strategy-label {
-      border-color: #9b5bff;
-      box-shadow: 0 0 18px rgba(155, 91, 255, 0.35);
-    }
-
-    .strategy-label {
-      display: block;
-      border-radius: 16px;
-      padding: 10px;
-      border: 1px solid transparent;
-    }
-
-    .advanced-toggle {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      margin-top: 14px;
-      font-weight: 600;
-    }
-
-    .advanced-content {
-      margin-top: 12px;
-      display: none;
-    }
-
-    .advanced-content[data-open="true"] {
-      display: grid;
-      gap: 16px;
-    }
-
-    button.primary {
-      border: none;
-      border-radius: 999px;
-      padding: 14px 24px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      background: linear-gradient(120deg, #8f27ff, #00d4ff 120%);
-      color: #0c0619;
-      box-shadow: 0 15px 30px rgba(0, 212, 255, 0.35);
-    }
-
-    .status-banner {
-      padding: 12px 18px;
-      border-radius: 14px;
-      font-weight: 600;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      display: none;
-      margin-top: 12px;
-    }
-
-    .status-banner[data-state="error"] {
-      background: rgba(255, 99, 132, 0.12);
-      border-color: rgba(255, 99, 132, 0.45);
-      color: #ff96aa;
-    }
-
-    .status-banner[data-state="success"] {
-      background: rgba(75, 192, 192, 0.12);
-      border-color: rgba(75, 192, 192, 0.45);
-      color: #84f3f3;
-    }
-
-    .clips-grid {
-      display: grid;
-      gap: 20px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-
-    .clip-card {
       border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    .strategy-card:hover { transform: translateY(-2px); }
+    .strategy-card input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .strategy-card input:checked + .strategy-label {
+      border-color: #a46bff;
+      box-shadow: 0 0 20px rgba(164, 107, 255, 0.35);
+    }
+    .strategy-label {
+      display: block;
+      border-radius: 14px;
+      padding: 8px;
+      border: 1px solid transparent;
+    }
+    .advanced-header {
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .advanced-panel[hidden] { display: none; }
+    .advanced-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    button.primary {
+      width: 100%;
+      margin-top: 10px;
+      border: none;
+      border-radius: 999px;
+      padding: 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(120deg, #8c2bff, #00d4ff 120%);
+      color: #05020b;
+      box-shadow: 0 18px 35px rgba(0, 212, 255, 0.35);
+    }
+    .status-banner {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      font-weight: 600;
+      display: none;
+    }
+    .status-banner[data-state="success"] {
+      border-color: rgba(94, 255, 201, 0.4);
+      color: #8fffe0;
+      background: rgba(94, 255, 201, 0.1);
+    }
+    .status-banner[data-state="error"] {
+      border-color: rgba(255, 118, 118, 0.5);
+      color: #ff9ea0;
+      background: rgba(255, 118, 118, 0.12);
+    }
+    .clips-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .clip-card {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 16px;
       background: rgba(0, 0, 0, 0.35);
-      overflow: hidden;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      padding: 16px;
     }
-
     .clip-card video {
       width: 100%;
       border-radius: 12px;
-      background: #0b0714;
+      background: #040207;
     }
-
     .clip-card .meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
     }
-
-    .clip-card .meta h4 {
-      margin: 0;
-      font-size: 1rem;
-    }
-
     .clip-card .meta a {
-      color: #00d4ff;
       text-decoration: none;
+      color: #00d4ff;
       font-weight: 600;
-      font-size: 0.95rem;
     }
-
     .empty {
       text-align: center;
-      padding: 20px;
-      color: #a6a6c8;
-    }
-
-    @media (max-width: 700px) {
-      .strategy-options {
-        flex-direction: column;
-      }
-
-      .advanced-content {
-        grid-template-columns: 1fr;
-      }
+      color: #a8a8c5;
+      padding: 18px;
     }
   </style>
 </head>
-
 <body>
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-
   <header>
     <h1>SnapSub Studio</h1>
-    <p>
-      Transform long-form footage into short-form hits. Drop a file or paste a video URL,
-      pick your strategy, and let SnapSub handle subtitles, watermarks, and more.
-    </p>
+    <p>Upload a long-form video or paste a YouTube link, choose the clip strategy, and let SnapSub deliver ready-to-post shorts.</p>
   </header>
 
   <main>
     <section class="panel">
-      <h2>Upload or Link Your Source</h2>
-
+      <h2>Source & Controls</h2>
       <form id="clip-form">
         <div class="upload-box">
-          <p>Drag & drop your video or pick a file</p>
+          <p>Drag & drop or pick a file</p>
           <input id="video-file" type="file" accept="video/*" />
         </div>
 
         <div class="field">
-          <label for="source-url">YouTube or public video URL (optional)</label>
-          <input id="source-url" type="url" placeholder="https://youtu.be/..." />
+          <label for="source-url">YouTube / public URL (optional)</label>
+          <input id="source-url" type="url" placeholder="https://youtu.be/…" />
         </div>
 
         <div class="field">
@@ -311,62 +225,58 @@
             <label class="strategy-card">
               <input type="radio" name="strategy" value="evenly_spaced" checked />
               <span class="strategy-label">
-                <strong>Evenly Spaced</strong>
-                <p>Uniform distribution across the video timeline.</p>
+                <strong>Evenly spaced</strong>
+                <small>Uniform highlights across the video.</small>
               </span>
             </label>
-
             <label class="strategy-card">
               <input type="radio" name="strategy" value="scene_based" />
               <span class="strategy-label">
-                <strong>Scene Detection</strong>
-                <p>Cut where action naturally changes.</p>
+                <strong>Scene based</strong>
+                <small>Automatic scene cut detection.</small>
               </span>
             </label>
-
             <label class="strategy-card">
               <input type="radio" name="strategy" value="randomized" />
               <span class="strategy-label">
                 <strong>Randomized</strong>
-                <p>Explore spontaneous highlights.</p>
+                <small>Discover spontaneous gems.</small>
               </span>
             </label>
           </div>
         </div>
 
-        <div class="advanced-toggle" id="advanced-toggle">
-          <span>Advanced Controls</span>
+        <div class="advanced-header" id="advanced-toggle" aria-expanded="false">
+          <span>Advanced controls</span>
           <span id="advanced-caret">▼</span>
         </div>
 
-        <div class="advanced-content" id="advanced-content" data-open="false">
-          <div class="field">
-            <label for="scene-threshold">Scene sensitivity (0–1)</label>
-            <input id="scene-threshold" type="number" min="0" max="1" step="0.05" value="0.4" />
-          </div>
-
-          <div class="field">
-            <label for="num-clips">Maximum clips</label>
-            <input id="num-clips" type="number" min="1" max="20" value="6" />
-          </div>
-
-          <div class="field">
-            <label for="watermark-text">Watermark text</label>
-            <input id="watermark-text" type="text" placeholder="SnapSub" />
-          </div>
-
-          <div class="field">
-            <label for="brand-color">Accent color</label>
-            <input id="brand-color" type="color" value="#b889ff" />
-          </div>
-
-          <div class="field">
-            <label for="captions">Captions language (ISO code)</label>
-            <input id="captions" type="text" placeholder="en" />
+        <div class="advanced-panel" id="advanced-panel" hidden>
+          <div class="advanced-grid">
+            <div class="field">
+              <label for="scene-threshold">Scene sensitivity (0–1)</label>
+              <input id="scene-threshold" type="number" min="0" max="1" step="0.05" value="0.35" />
+            </div>
+            <div class="field">
+              <label for="num-clips">Maximum clips</label>
+              <input id="num-clips" type="number" min="1" max="20" value="6" />
+            </div>
+            <div class="field">
+              <label for="watermark-text">Watermark text</label>
+              <input id="watermark-text" type="text" placeholder="SnapSub" />
+            </div>
+            <div class="field">
+              <label for="brand-color">Accent color</label>
+              <input id="brand-color" type="color" value="#b987ff" />
+            </div>
+            <div class="field">
+              <label for="captions">Captions language (ISO)</label>
+              <input id="captions" type="text" placeholder="en" />
+            </div>
           </div>
         </div>
 
-        <button class="primary" type="submit">Generate Clips</button>
+        <button class="primary" type="submit" id="generate-btn">Generate clips</button>
         <div id="status-banner" class="status-banner"></div>
       </form>
     </section>
@@ -380,7 +290,6 @@
   </main>
 
   <script>
-    // Auto-detect API: localhost for dev, Render in production
     const API_BASE = window.location.hostname.includes('localhost')
       ? 'http://127.0.0.1:8000'
       : 'https://snapsub-backend.onrender.com';
@@ -388,7 +297,8 @@
     const endpoints = {
       health: `${API_BASE}/health`,
       upload: `${API_BASE}/upload`,
-      generate: `${API_BASE}/generate-clips`
+      generate: `${API_BASE}/generate-clips`,
+      clips: (jobId) => `${API_BASE}/clips?job_id=${encodeURIComponent(jobId)}`
     };
 
     const formEl = document.getElementById('clip-form');
@@ -396,43 +306,45 @@
     const sourceUrlInput = document.getElementById('source-url');
     const statusBanner = document.getElementById('status-banner');
     const clipsGrid = document.getElementById('clips-grid');
+    const generateBtn = document.getElementById('generate-btn');
 
     const advancedToggle = document.getElementById('advanced-toggle');
-    const advancedContent = document.getElementById('advanced-content');
+    const advancedPanel = document.getElementById('advanced-panel');
     const advancedCaret = document.getElementById('advanced-caret');
 
     advancedToggle.addEventListener('click', () => {
-      const open = advancedContent.dataset.open === 'true';
-      advancedContent.dataset.open = (!open).toString();
-      advancedCaret.textContent = open ? '▼' : '▲';
+      const expanded = advancedToggle.getAttribute('aria-expanded') === 'true';
+      advancedToggle.setAttribute('aria-expanded', (!expanded).toString());
+      advancedPanel.hidden = expanded;
+      advancedCaret.textContent = expanded ? '▼' : '▲';
     });
 
-    function setStatus(message, kind = 'info') {
+    function setStatus(message, state = 'info') {
       statusBanner.textContent = message;
-      statusBanner.dataset.state = kind;
+      statusBanner.dataset.state = state;
       statusBanner.style.display = 'block';
     }
 
     function clearStatus() {
-      statusBanner.textContent = '';
       statusBanner.style.display = 'none';
+      statusBanner.textContent = '';
     }
 
     async function checkHealth() {
       try {
         const res = await fetch(endpoints.health);
-        if (!res.ok) throw new Error('Health check failed');
+        if (!res.ok) throw new Error();
         setStatus('Backend connected ✅', 'success');
         setTimeout(clearStatus, 2500);
       } catch {
-        setStatus('Cannot reach backend. Verify the Render URL.', 'error');
+        setStatus('Backend unreachable. Confirm Render URL.', 'error');
       }
     }
 
     function buildAdvancedPayload() {
       return {
-        scene_threshold: Number(document.getElementById('scene-threshold').value),
-        max_clips: Number(document.getElementById('num-clips').value),
+        scene_threshold: Number(document.getElementById('scene-threshold').value) || null,
+        max_clips: Number(document.getElementById('num-clips').value) || null,
         watermark_text: document.getElementById('watermark-text').value || null,
         brand_color_hex: document.getElementById('brand-color').value || null,
         subtitles_lang: document.getElementById('captions').value || null
@@ -445,7 +357,7 @@
       return res.json();
     }
 
-    async function generateClips(payload) {
+    async function requestGeneration(payload) {
       const res = await fetch(endpoints.generate, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -453,6 +365,23 @@
       });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
+    }
+
+    async function pollForClips(jobId, maxAttempts = 40, delayMs = 4000) {
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const res = await fetch(endpoints.clips(jobId));
+        if (res.status === 404 || res.status === 204) {
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if (Array.isArray(data.clips) && data.clips.length) {
+          return data.clips;
+        }
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+      throw new Error('Timed out waiting for clips.');
     }
 
     function renderClips(clips = []) {
@@ -469,8 +398,8 @@
           <video controls src="${clip.url}" poster="${clip.thumbnail ?? ''}" preload="metadata"></video>
           <div class="meta">
             <div>
-              <h4>${clip.title ?? \`Clip #\${idx + 1}\`}</h4>
-              ${duration ? `<p>${duration.toFixed(1)}s</p>` : ''}
+              <h4>${clip.title ?? `Clip #${idx + 1}`}</h4>
+              ${duration ? `<small>${duration.toFixed(1)}s</small>` : ''}
             </div>
             <a href="${clip.url}" download>Download</a>
           </div>
@@ -481,37 +410,47 @@
 
     formEl.addEventListener('submit', async (evt) => {
       evt.preventDefault();
-
       const formData = new FormData();
-      if (uploadInput.files[0]) {
-        formData.append('file', uploadInput.files[0]);
-      }
-      if (sourceUrlInput.value.trim()) {
-        formData.append('source_url', sourceUrlInput.value.trim());
-      }
-      if (!formData.has('file') && !formData.has('source_url')) {
-        setStatus('Provide a file or a source URL.', 'error');
+      const file = uploadInput.files[0];
+      const sourceUrl = sourceUrlInput.value.trim();
+
+      if (file) formData.append('file', file);
+      if (sourceUrl) formData.append('source_url', sourceUrl);
+
+      if (!file && !sourceUrl) {
+        setStatus('Provide a file or a source URL before generating.', 'error');
         return;
       }
+
+      generateBtn.disabled = true;
 
       try {
         setStatus('Uploading source…');
         const uploadResp = await uploadSource(formData);
 
-        setStatus('Generating clips…');
+        const jobId = uploadResp.job_id ?? uploadResp.id;
+        if (!jobId) throw new Error('Upload response missing job ID.');
+
         const payload = {
-          job_id: uploadResp.job_id,
+          job_id: jobId,
           clip_length_sec: Number(document.getElementById('clip-length').value),
           strategy: document.querySelector('input[name="strategy"]:checked').value,
+          source_asset_path: uploadResp.source_asset_path ?? uploadResp.asset_path ?? null,
+          source_media_url: uploadResp.source_media_url ?? uploadResp.url ?? null,
           ...buildAdvancedPayload()
         };
 
-        const { clips } = await generateClips(payload);
+        setStatus('Processing clips…');
+        await requestGeneration(payload);
+
+        const clips = await pollForClips(jobId);
         renderClips(clips);
         setStatus('Clips ready! ✅', 'success');
       } catch (err) {
         console.error(err);
         setStatus(`Error: ${err.message}`, 'error');
+      } finally {
+        generateBtn.disabled = false;
       }
     });
 
