@@ -179,14 +179,14 @@ def _apply_video_filters(
     if export_opts.add_fade and duration > 2 * export_opts.fade_duration:
         video_stream = video_stream.filter(
             "fade",
-            "t=in",
-            "st=0",
-            f"d={export_opts.fade_duration}",
+            type="in",
+            start_time=0,
+            duration=export_opts.fade_duration,
         ).filter(
             "fade",
-            "t=out",
-            f"st={duration - export_opts.fade_duration}",
-            f"d={export_opts.fade_duration}",
+            type="out",
+            start_time=max(0, duration - export_opts.fade_duration),
+            duration=export_opts.fade_duration,
         )
     if srt_path:
         video_stream = video_stream.filter_("subtitles", str(srt_path))
