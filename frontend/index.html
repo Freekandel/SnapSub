@@ -422,7 +422,7 @@
       if (file) formData.append('file', file);
       if (sourceUrl) formData.append('source_url', sourceUrl);
 
-      if (!file and !sourceUrl) {
+     if (!file && !sourceUrl) {
         setStatus('Provide a file or a source URL before generating.', 'error');
         return;
       }
