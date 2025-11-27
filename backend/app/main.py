@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -15,11 +16,21 @@ from .utils import DATA_DIR, ensure_dir, new_video_id
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://snapsub-frontend.onrender.com")
+LOCAL_PREVIEW_ORIGINS = [
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+ALLOWED_ORIGINS = [FRONTEND_ORIGIN, *LOCAL_PREVIEW_ORIGINS]
+
 app = FastAPI(title="SnapSub MVP API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
