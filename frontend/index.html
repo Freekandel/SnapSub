@@ -155,7 +155,7 @@
     .status-banner[data-state="error"] {
       border-color: rgba(255, 118, 118, 0.5);
       color: #ff9ea0;
-      background: rgba(255, 255, 118, 0.12);
+      background: rgba(255, 118, 118, 0.12);
     }
     .clips-grid {
       display: grid;
@@ -229,14 +229,14 @@
           <span>Clip strategy</span>
           <div class="strategy-options">
             <label class="strategy-card">
-              <input type="radio" name="strategy" value="evenly_spaced" checked />
+              <input type="radio" name="strategy" value="even" checked />
               <span class="strategy-label">
                 <strong>Evenly spaced</strong>
                 <small>Uniform highlights across the video.</small>
               </span>
             </label>
             <label class="strategy-card">
-              <input type="radio" name="strategy" value="scene_based" />
+              <input type="radio" name="strategy" value="scene" />
               <span class="strategy-label">
                 <strong>Scene based</strong>
                 <small>Automatic scene cut detection.</small>
@@ -302,6 +302,7 @@
     const endpoints = {
       health: `${API_BASE}/health`,
       upload: `${API_PREFIX}/upload`,
+      uploadStatus: (videoId) => `${API_PREFIX}/upload-status?video_id=${encodeURIComponent(videoId)}`,
       generate: `${API_PREFIX}/generate`,
       download: (videoId, name) =>
         `${API_PREFIX}/download?video_id=${encodeURIComponent(videoId)}&name=${encodeURIComponent(name)}`
@@ -347,18 +348,41 @@
       }
     }
 
-    function buildAdvancedPayload() {
-      return {
-        scene_thresh: Number(document.getElementById('scene-threshold').value) || 0.35,
-        n_clips: Number(document.getElementById('num-clips').value) || 6,
-        strategy: document.querySelector('input[name="strategy"]:checked').value,
-      };
+    function buildGenerationForm(videoId) {
+      const payload = new FormData();
+      payload.append('video_id', videoId);
+      payload.append('clip_len', document.getElementById('clip-length').value);
+      payload.append('n_clips', document.getElementById('num-clips').value);
+      payload.append('scene_thresh', document.getElementById('scene-threshold').value);
+      payload.append('strategy', document.querySelector('input[name="strategy"]:checked').value);
+      return payload;
     }
 
     async function uploadSource(formData) {
       const res = await fetch(endpoints.upload, { method: 'POST', body: formData });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
+    }
+
+    async function waitForSourceReady(videoId, maxAttempts = 80, delayMs = 3000) {
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const res = await fetch(endpoints.uploadStatus(videoId));
+        if (res.status === 404) {
+          throw new Error('Upload ID not found on server.');
+        }
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        const data = await res.json();
+        const state = (data.state || data.status || '').toLowerCase();
+        if (state === 'ready') return data;
+        if (state === 'error') {
+          throw new Error(data.error || 'Source download failed.');
+        }
+        setStatus(`Downloading source… (attempt ${attempt + 1})`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      throw new Error('Timed out while downloading the source media.');
     }
 
     async function requestGeneration(payload) {
@@ -416,20 +440,20 @@
         setStatus('Uploading source…');
         const uploadResp = await uploadSource(uploadForm);
 
-        const jobId = uploadResp.job_id ?? uploadResp.id ?? uploadResp.video_id;
-        if (!jobId) throw new Error('Upload response missing job ID.');
+        const videoId = uploadResp.video_id ?? uploadResp.job_id ?? uploadResp.id;
+        if (!videoId) throw new Error('Upload response missing video ID.');
 
-        const formPayload = new FormData();
-        formPayload.append('video_id', jobId);
-        formPayload.append('clip_len', document.getElementById('clip-length').value);
-        formPayload.append('strategy', document.querySelector('input[name="strategy"]:checked').value);
-        formPayload.append('n_clips', document.getElementById('num-clips').value);
-        formPayload.append('scene_thresh', document.getElementById('scene-threshold').value);
+        const uploadState = (uploadResp.state || uploadResp.status || 'ready').toLowerCase();
+        if (uploadState !== 'ready') {
+          setStatus('Downloading source media…');
+          await waitForSourceReady(videoId);
+        }
 
+        const payload = buildGenerationForm(videoId);
         setStatus('Processing clips…');
-        const { clips = [] } = await requestGeneration(formPayload);
+        const { clips = [] } = await requestGeneration(payload);
 
-        renderClips(jobId, clips);
+        renderClips(videoId, clips);
         setStatus('Clips ready! ✅', 'success');
       } catch (err) {
         console.error(err);

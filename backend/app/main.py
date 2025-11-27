@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, File, Form, UploadFile
@@ -39,6 +40,17 @@ app.add_middleware(
 
 api = APIRouter(prefix="/api")
 
+_download_registry: dict[str, dict[str, Any]] = {}
+
+
+def set_download_state(video_id: str, **payload: Any) -> None:
+    _download_registry[video_id] = {"state": payload.get("state", "ready"), **payload}
+
+
+def get_download_state(video_id: str) -> dict[str, Any] | None:
+    state = _download_registry.get(video_id)
+    return state.copy() if state else None
+
 
 @app.get("/health")
 def health_check():
@@ -60,6 +72,30 @@ def _as_bool(value, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+async def _download_source(video_id: str, source_url: str, vid_dir: Path) -> None:
+    tmp_path = vid_dir / "input_download.mp4"
+    cmd = ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url]
+
+    logger.info("[download:%s] starting yt-dlp for %s", video_id, source_url)
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        err_msg = stderr.decode().strip() or stdout.decode().strip() or "yt-dlp failed"
+        set_download_state(video_id, state="error", error=err_msg)
+        logger.error("[download:%s] failed: %s", video_id, err_msg)
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        return
+
+    set_download_state(video_id, state="ready", input_path=str(tmp_path))
+    logger.info("[download:%s] completed", video_id)
+
+
 @api.post("/upload")
 async def upload_video(
     file: UploadFile | None = File(None),
@@ -75,18 +111,23 @@ async def upload_video(
         in_path = vid_dir / f"input_{file.filename}"
         with open(in_path, "wb") as f:
             f.write(await file.read())
-    else:
-        if not source_url:
-            raise ValueError("source_url must be provided when no file is uploaded")
+        set_download_state(vid, state="ready", input_path=str(in_path))
+        return {"video_id": vid, "state": "ready", "input_path": str(in_path)}
 
-        tmp_path = vid_dir / "download.mp4"
-        subprocess.run(
-            ["yt-dlp", "-f", "mp4", "-o", str(tmp_path), source_url],
-            check=True,
-        )
-        in_path = tmp_path
+    if not source_url:
+        return JSONResponse({"error": "source_url required"}, status_code=400)
 
-    return {"video_id": vid, "input_path": str(in_path)}
+    asyncio.create_task(_download_source(vid, source_url, vid_dir))
+    set_download_state(vid, state="downloading")
+    return {"video_id": vid, "state": "downloading"}
+
+
+@api.get("/upload-status")
+def upload_status(video_id: str):
+    state = get_download_state(video_id)
+    if not state:
+        return JSONResponse({"error": "video_id not found"}, status_code=404)
+    return {"video_id": video_id, **state}
 
 
 def format_srt_time(t: float) -> str:
@@ -116,6 +157,18 @@ async def api_generate(
     fade: int = Form(1),
     fade_duration: float = Form(0.6),
 ):
+    state = get_download_state(video_id)
+    if state and state.get("state") == "downloading":
+        return JSONResponse(
+            {"error": "source still downloading", "state": state["state"]},
+            status_code=409,
+        )
+    if state and state.get("state") == "error":
+        return JSONResponse(
+            {"error": state.get("error", "source download failed"), "state": "error"},
+            status_code=400,
+        )
+
     vid_dir = DATA_DIR / video_id
     if not vid_dir.exists():
         return JSONResponse({"error": "video_id not found"}, status_code=404)
